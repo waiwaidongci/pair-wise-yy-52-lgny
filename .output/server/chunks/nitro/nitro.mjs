@@ -853,6 +853,7 @@ function getRequestURL(event, opts = {}) {
 }
 
 const RawBodySymbol = Symbol.for("h3RawBody");
+const ParsedBodySymbol = Symbol.for("h3ParsedBody");
 const PayloadMethods$1 = ["PATCH", "POST", "PUT", "DELETE"];
 function readRawBody(event, encoding = "utf8") {
   assertMethod(event, PayloadMethods$1);
@@ -922,6 +923,26 @@ function readRawBody(event, encoding = "utf8") {
   const result = encoding ? promise.then((buff) => buff.toString(encoding)) : promise;
   return result;
 }
+async function readBody(event, options = {}) {
+  const request = event.node.req;
+  if (hasProp(request, ParsedBodySymbol)) {
+    return request[ParsedBodySymbol];
+  }
+  const contentType = request.headers["content-type"] || "";
+  const body = await readRawBody(event);
+  let parsed;
+  if (contentType === "application/json") {
+    parsed = _parseJSON(body, options.strict ?? true);
+  } else if (contentType.startsWith("application/x-www-form-urlencoded")) {
+    parsed = _parseURLEncodedBody(body);
+  } else if (contentType.startsWith("text/")) {
+    parsed = body;
+  } else {
+    parsed = _parseJSON(body, options.strict ?? false);
+  }
+  request[ParsedBodySymbol] = parsed;
+  return parsed;
+}
 function getRequestWebStream(event) {
   if (!PayloadMethods$1.includes(event.method)) {
     return;
@@ -955,6 +976,35 @@ function getRequestWebStream(event) {
       });
     }
   });
+}
+function _parseJSON(body = "", strict) {
+  if (!body) {
+    return void 0;
+  }
+  try {
+    return destr(body, { strict });
+  } catch {
+    throw createError$1({
+      statusCode: 400,
+      statusMessage: "Bad Request",
+      message: "Invalid JSON body"
+    });
+  }
+}
+function _parseURLEncodedBody(body) {
+  const form = new URLSearchParams(body);
+  const parsedForm = /* @__PURE__ */ Object.create(null);
+  for (const [key, value] of form.entries()) {
+    if (hasProp(parsedForm, key)) {
+      if (!Array.isArray(parsedForm[key])) {
+        parsedForm[key] = [parsedForm[key]];
+      }
+      parsedForm[key].push(value);
+    } else {
+      parsedForm[key] = value;
+    }
+  }
+  return parsedForm;
 }
 
 function handleCacheHeaders(event, opts) {
@@ -4406,7 +4456,7 @@ function _expandFromEnv(value) {
 const _inlineRuntimeConfig = {
   "app": {
     "baseURL": "/",
-    "buildId": "39efcce8-b443-49dc-aba5-a6f8ce6e2a42",
+    "buildId": "d765d6f7-b9c9-4815-92d9-edafab763a90",
     "buildAssetsDir": "/_nuxt/",
     "cdnURL": ""
   },
@@ -4870,170 +4920,191 @@ async function errorHandler(error, event) {
 
 const script = "\"use strict\";(()=>{const t=window,e=document.documentElement,c=[\"dark\",\"light\"],n=getStorageValue(\"localStorage\",\"nuxt-color-mode\")||\"system\";let i=n===\"system\"?u():n;const r=e.getAttribute(\"data-color-mode-forced\");r&&(i=r),l(i),t[\"__NUXT_COLOR_MODE__\"]={preference:n,value:i,getColorScheme:u,addColorScheme:l,removeColorScheme:d};function l(o){const s=\"\"+o+\"\",a=\"\";e.classList?e.classList.add(s):e.className+=\" \"+s,a&&e.setAttribute(\"data-\"+a,o)}function d(o){const s=\"\"+o+\"\",a=\"\";e.classList?e.classList.remove(s):e.className=e.className.replace(new RegExp(s,\"g\"),\"\"),a&&e.removeAttribute(\"data-\"+a)}function f(o){return t.matchMedia(\"(prefers-color-scheme\"+o+\")\")}function u(){if(t.matchMedia&&f(\"\").media!==\"not all\"){for(const o of c)if(f(\":\"+o).matches)return o}return\"light\"}})();function getStorageValue(t,e){switch(t){case\"localStorage\":return window.localStorage.getItem(e);case\"sessionStorage\":return window.sessionStorage.getItem(e);case\"cookie\":return getCookie(e);default:return null}}function getCookie(t){const c=(\"; \"+window.document.cookie).split(\"; \"+t+\"=\");if(c.length===2)return c.pop()?.split(\";\").shift()}";
 
-const _q7c8JvHjfjRAI3ftlkDekwdvRWb4MdzwszJZ3aIh6M = (function(nitro) {
+const _XTYUJPuDmd9BED58rvpfNGt6hRADmSbwOeSHCDsNmA = (function(nitro) {
   nitro.hooks.hook("render:html", (htmlContext) => {
     htmlContext.head.push(`<script>${script}<\/script>`);
   });
 });
 
 const plugins = [
-  _q7c8JvHjfjRAI3ftlkDekwdvRWb4MdzwszJZ3aIh6M
+  _XTYUJPuDmd9BED58rvpfNGt6hRADmSbwOeSHCDsNmA
 ];
 
 const assets = {
-  "/_nuxt/BKZX93DC.js": {
+  "/_nuxt/BN4FC12o.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"916-GHoVOW+XqHhci/UEVYLfL3l1xQ0\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 2326,
-    "path": "../public/_nuxt/BKZX93DC.js"
-  },
-  "/_nuxt/Bsj20_j_.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"491e-b/sZtxvHGa/0oDoR3g1EGW1e3IA\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 18718,
-    "path": "../public/_nuxt/Bsj20_j_.js"
-  },
-  "/_nuxt/BxpSQd02.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"e58c-2zmMeNIrDv11ea3XKm9/MBrmueg\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 58764,
-    "path": "../public/_nuxt/BxpSQd02.js"
-  },
-  "/_nuxt/CZINpjSl.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"d2a-RUaJCuib/c+ycYH+s+n16id4AkI\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
+    "etag": "\"d2a-S0tFkAzOoQHj1H3g49FaEu6lUuQ\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
     "size": 3370,
-    "path": "../public/_nuxt/CZINpjSl.js"
+    "path": "../public/_nuxt/BN4FC12o.js"
   },
-  "/_nuxt/CmTe7aAM.js": {
+  "/_nuxt/BNxAwqAi.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"e97-wCSb2k0hqD6jV0LSLPihVOi3voo\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 3735,
-    "path": "../public/_nuxt/CmTe7aAM.js"
+    "etag": "\"3063-8Y3XZm6nvXM4sGb43pCt0sgJj1g\"",
+    "mtime": "2026-09-29T10:04:11.047Z",
+    "size": 12387,
+    "path": "../public/_nuxt/BNxAwqAi.js"
   },
-  "/_nuxt/D5-R8jc2.js": {
+  "/_nuxt/Bm1vAtdh.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"42c0e-lkOdjuskDGPkwtMcpJ583PU+AB8\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 273422,
-    "path": "../public/_nuxt/D5-R8jc2.js"
+    "etag": "\"1f3a-3xMCKUU2sto6jopxU7C5WUDNTDY\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 7994,
+    "path": "../public/_nuxt/Bm1vAtdh.js"
   },
-  "/_nuxt/DZ_SRDU_.js": {
+  "/_nuxt/Bs8WDMZm.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"75c-s3KEId8pQgJRwquyYvSsYv9SP2s\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 1884,
-    "path": "../public/_nuxt/DZ_SRDU_.js"
+    "etag": "\"986-Q4sRl7geQOOyTjGxpgr0zlyKdt4\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 2438,
+    "path": "../public/_nuxt/Bs8WDMZm.js"
   },
-  "/_nuxt/FF7n7XtM.js": {
+  "/_nuxt/COIQfZlR.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"1647-rD3h8wg7eRO/sFRr9/uarv4uNqc\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 5703,
-    "path": "../public/_nuxt/FF7n7XtM.js"
+    "etag": "\"e61-tZ79Ex81f0JAKlqflYk4uKth9Vg\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 3681,
+    "path": "../public/_nuxt/COIQfZlR.js"
   },
-  "/_nuxt/audit.DlhcW_HS.css": {
+  "/_nuxt/B1L8eata.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"483fd-cFL2oaajtchBGscMvGrJ/QELVdo\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 295933,
+    "path": "../public/_nuxt/B1L8eata.js"
+  },
+  "/_nuxt/CYa05z2O.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1b97-p/MM+tTCoRcoD1JIkouRmX84mR4\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 7063,
+    "path": "../public/_nuxt/CYa05z2O.js"
+  },
+  "/_nuxt/Cg77IUY4.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1394-Tpt++cEKTZz/o15AGpq/hvBLPwE\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 5012,
+    "path": "../public/_nuxt/Cg77IUY4.js"
+  },
+  "/_nuxt/F0Z3L4Jv.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1e1f-dy2NO/akBcoVX+t4qqZs4DLo+38\"",
+    "mtime": "2026-09-29T10:04:11.049Z",
+    "size": 7711,
+    "path": "../public/_nuxt/F0Z3L4Jv.js"
+  },
+  "/_nuxt/LugOXEDT.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"153e-4ECtTPlilFSGGuu9wqkwrkwGjHQ\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 5438,
+    "path": "../public/_nuxt/LugOXEDT.js"
+  },
+  "/_nuxt/Select.qOczc23w.css": {
     "type": "text/css; charset=utf-8",
-    "etag": "\"52d-TohkUXY/FelgIVjA/hxTMT2/Ac4\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 1325,
-    "path": "../public/_nuxt/audit.DlhcW_HS.css"
+    "etag": "\"35-Hb86PzaLnD1sW/ziYwV0CUep5rA\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 53,
+    "path": "../public/_nuxt/Select.qOczc23w.css"
   },
-  "/_nuxt/default.BhB2q3WR.css": {
+  "/_nuxt/audit.Dp514kmH.css": {
     "type": "text/css; charset=utf-8",
-    "etag": "\"818-gYRVmk9ULBnVZMERZj+OoOQTbXs\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 2072,
-    "path": "../public/_nuxt/default.BhB2q3WR.css"
+    "etag": "\"5f6-nFPwen9kCZsnhKAI8i8mRwVJeIg\"",
+    "mtime": "2026-09-29T10:04:11.049Z",
+    "size": 1526,
+    "path": "../public/_nuxt/audit.Dp514kmH.css"
   },
-  "/_nuxt/devices.BkWmo4Wy.css": {
-    "type": "text/css; charset=utf-8",
-    "etag": "\"6c5-9qn+jfq/oowO9Dp2RjTR2L/bVTo\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 1733,
-    "path": "../public/_nuxt/devices.BkWmo4Wy.css"
-  },
-  "/_nuxt/UEmXJnl7.js": {
+  "/_nuxt/JQZ89zlX.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"6e53-MjxmqWpeD/daU941jLiuTWTaV6M\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 28243,
-    "path": "../public/_nuxt/UEmXJnl7.js"
+    "etag": "\"ee42-qS+LZXkP/B1ABv/rJK5gkTwwAuo\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 60994,
+    "path": "../public/_nuxt/JQZ89zlX.js"
   },
-  "/_nuxt/error-404.DL_4WIao.css": {
+  "/_nuxt/CsFhJi8e.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1f7c-1vnR41eDK4N46LunFOzkK0c+3q8\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 8060,
+    "path": "../public/_nuxt/CsFhJi8e.js"
+  },
+  "/_nuxt/J-GhIJjo.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1de3-cyMLTckiiwTE5xGQfvKKjb/Msag\"",
+    "mtime": "2026-09-29T10:04:11.049Z",
+    "size": 7651,
+    "path": "../public/_nuxt/J-GhIJjo.js"
+  },
+  "/_nuxt/default.COYTz37e.css": {
     "type": "text/css; charset=utf-8",
-    "etag": "\"dca-KnjyV0UbpsrliiJzZx69defY74k\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 3530,
-    "path": "../public/_nuxt/error-404.DL_4WIao.css"
+    "etag": "\"87f-mzDo2av15GdwPP+kBQqBJFkWEnI\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 2175,
+    "path": "../public/_nuxt/default.COYTz37e.css"
   },
   "/_nuxt/error-500.I1Dtv2V5.css": {
     "type": "text/css; charset=utf-8",
     "etag": "\"75a-vEGyJqldBVJrnMfcLsrGaHcxYl0\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
+    "mtime": "2026-09-29T10:04:11.049Z",
     "size": 1882,
     "path": "../public/_nuxt/error-500.I1Dtv2V5.css"
   },
-  "/_nuxt/index.qZEf_Jrx.css": {
+  "/_nuxt/error-404.DL_4WIao.css": {
     "type": "text/css; charset=utf-8",
-    "etag": "\"683-70e7l+49FQyl06OXE97ViM++WnU\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 1667,
-    "path": "../public/_nuxt/index.qZEf_Jrx.css"
+    "etag": "\"dca-KnjyV0UbpsrliiJzZx69defY74k\"",
+    "mtime": "2026-09-29T10:04:11.049Z",
+    "size": 3530,
+    "path": "../public/_nuxt/error-404.DL_4WIao.css"
   },
-  "/_nuxt/permits.DBavPBho.css": {
+  "/_nuxt/devices.CFhGXx9K.css": {
     "type": "text/css; charset=utf-8",
-    "etag": "\"1a70-/+YDto49bKnHthLwsCEreZh8V5A\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 6768,
-    "path": "../public/_nuxt/permits.DBavPBho.css"
+    "etag": "\"a84-MreaTcbGi1XmXYUwf8yhpFxKlCY\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 2692,
+    "path": "../public/_nuxt/devices.CFhGXx9K.css"
+  },
+  "/_nuxt/hQHtUu17.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"e97-C0KgO055TgR9teLITp/5O0/NLuQ\"",
+    "mtime": "2026-09-29T10:04:11.049Z",
+    "size": 3735,
+    "path": "../public/_nuxt/hQHtUu17.js"
+  },
+  "/_nuxt/index.BlN43RBJ.css": {
+    "type": "text/css; charset=utf-8",
+    "etag": "\"84c-S5pZxh8y1CT6SLC3jwkFFT8npD4\"",
+    "mtime": "2026-09-29T10:04:11.049Z",
+    "size": 2124,
+    "path": "../public/_nuxt/index.BlN43RBJ.css"
+  },
+  "/_nuxt/s3zHWIs3.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"164b-CkrArFbbFOOqjyyyIbsAbc23FE8\"",
+    "mtime": "2026-09-29T10:04:11.049Z",
+    "size": 5707,
+    "path": "../public/_nuxt/s3zHWIs3.js"
+  },
+  "/_nuxt/permits.BvaXhe7C.css": {
+    "type": "text/css; charset=utf-8",
+    "etag": "\"239e-194ykF2wIpLsBQqeWsOidyrnxgU\"",
+    "mtime": "2026-09-29T10:04:11.048Z",
+    "size": 9118,
+    "path": "../public/_nuxt/permits.BvaXhe7C.css"
   },
   "/_nuxt/builds/latest.json": {
     "type": "application/json",
-    "etag": "\"47-G7lRnkrE7xhu2/Cwf6mA+m9w+Ns\"",
-    "mtime": "2026-09-28T16:56:11.555Z",
+    "etag": "\"47-BF798fqhn5eLUWO8JI/wLs4STnw\"",
+    "mtime": "2026-09-29T10:04:11.041Z",
     "size": 71,
     "path": "../public/_nuxt/builds/latest.json"
   },
-  "/_nuxt/builds/meta/39efcce8-b443-49dc-aba5-a6f8ce6e2a42.json": {
+  "/_nuxt/builds/meta/d765d6f7-b9c9-4815-92d9-edafab763a90.json": {
     "type": "application/json",
-    "etag": "\"58-k3apnv++Q37Pqh5f1Ov8muoyUdM\"",
-    "mtime": "2026-09-28T16:56:11.551Z",
+    "etag": "\"58-98cDKly3Y/G5wODLQg4ImP735b4\"",
+    "mtime": "2026-09-29T10:04:11.038Z",
     "size": 88,
-    "path": "../public/_nuxt/builds/meta/39efcce8-b443-49dc-aba5-a6f8ce6e2a42.json"
-  },
-  "/_nuxt/Dy0GnUmN.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"18cd-XYTYvcX4pu3J2LuTEVXBHR/pktM\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 6349,
-    "path": "../public/_nuxt/Dy0GnUmN.js"
-  },
-  "/_nuxt/DnjZ1tOG.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"e30-xipZJjHOsdm+fyJbA9wgjWQvoZY\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 3632,
-    "path": "../public/_nuxt/DnjZ1tOG.js"
-  },
-  "/_nuxt/CwoMDRT9.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"1f66-JUDtBlkd9nM44McyxGarLblR2TE\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 8038,
-    "path": "../public/_nuxt/CwoMDRT9.js"
-  },
-  "/_nuxt/VrCV8vyJ.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"1e1f-y8yz23OmLUcPlJUE5IHGNLSK104\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 7711,
-    "path": "../public/_nuxt/VrCV8vyJ.js"
+    "path": "../public/_nuxt/builds/meta/d765d6f7-b9c9-4815-92d9-edafab763a90.json"
   }
 };
 
@@ -5175,7 +5246,7 @@ function getAsset (id) {
 
 const METHODS = /* @__PURE__ */ new Set(["HEAD", "GET"]);
 const EncodingMap = { gzip: ".gz", br: ".br" };
-const _j0L_yP = eventHandler((event) => {
+const _3Vjyl7 = eventHandler((event) => {
   if (event.method && !METHODS.has(event.method)) {
     return;
   }
@@ -5296,12 +5367,657 @@ function publicAssetsURL(...path) {
 	return path.length ? joinRelativeURL(publicBase, ...path) : publicBase;
 }
 
+function buildSeedState() {
+  const permits = [
+    {
+      id: "WP-260929-018",
+      title: "3 \u53F7\u98CE\u673A\u9F7F\u8F6E\u7BB1\u66F4\u6362",
+      device: "WTG-03 \xB7 \u7BB1\u53D8 03",
+      deviceCodes: ["WTG-03", "BOX-03"],
+      crew: "\u673A\u52A1\u4E8C\u73ED",
+      owner: "\u674E\u9A81",
+      windowStart: "2026-09-29T14:00",
+      windowEnd: "2026-09-29T22:00",
+      window: "09-29 14:00 \u2014 22:00",
+      status: "\u6267\u884C\u4E2D",
+      risk: "\u4E00\u7EA7",
+      revision: 4,
+      reviewRequired: false,
+      holdConflictIds: [],
+      createdAt: "09-29 13:40",
+      isolationPoints: [
+        { id: "IP-301", device: "WTG-03", label: "\u5854\u57FA 690V \u4E3B\u5F00\u5173", type: "\u5F00\u5173", state: "\u5DF2\u9694\u79BB" },
+        { id: "IP-302", device: "BOX-03", label: "\u7BB1\u53D8\u4F4E\u538B\u4FA7\u5200\u95F8", type: "\u5200\u95F8", state: "\u5DF2\u9694\u79BB" },
+        { id: "IP-303", device: "WTG-03", label: "\u53F6\u8F6E\u673A\u68B0\u9501", type: "\u9600\u95E8", state: "\u5DF2\u9694\u79BB" }
+      ],
+      steps: [
+        { id: "ST-01", text: "\u6838\u5BF9\u5DE5\u4F5C\u7968\u3001\u8BBE\u5907\u53CC\u91CD\u7F16\u53F7\u4E0E\u73B0\u573A\u6807\u8BC6", done: true, owner: "\u5468\u91CE", evidence: "\u73B0\u573A\u7167\u7247 2 \u5F20" },
+        { id: "ST-02", text: "\u65AD\u5F00 690V \u4E3B\u5F00\u5173\u5E76\u6267\u884C\u673A\u68B0\u9501\u5B9A", done: true, owner: "\u5468\u91CE", evidence: "\u9501\u5177\u7F16\u53F7 LK-2107" },
+        { id: "ST-03", text: "\u9A8C\u7535\u3001\u653E\u7535\u5E76\u88C5\u8BBE\u63A5\u5730\u7EBF", done: true, owner: "\u4F55\u5C9A", evidence: "\u63A5\u5730\u7EBF GND-042" },
+        { id: "ST-04", text: "\u5168\u4F53\u4F5C\u4E1A\u4EBA\u5458\u786E\u8BA4\u9694\u79BB\u8FB9\u754C", done: false, owner: "\u674E\u9A81" }
+      ],
+      history: [
+        {
+          revision: 3,
+          at: "09-29 15:20",
+          reason: "\u9694\u79BB\u8FB9\u754C\u8C03\u6574\uFF08\u589E\u52A0\u53F6\u8F6E\u673A\u68B0\u9501\uFF09",
+          status: "\u6267\u884C\u4E2D",
+          windowLabel: "09-29 14:00 \u2014 22:00",
+          isolationPoints: [
+            { id: "IP-301", device: "WTG-03", label: "\u5854\u57FA 690V \u4E3B\u5F00\u5173", type: "\u5F00\u5173", state: "\u5DF2\u9694\u79BB" },
+            { id: "IP-302", device: "BOX-03", label: "\u7BB1\u53D8\u4F4E\u538B\u4FA7\u5200\u95F8", type: "\u5200\u95F8", state: "\u5DF2\u9694\u79BB" }
+          ],
+          steps: [
+            { id: "ST-01", text: "\u6838\u5BF9\u5DE5\u4F5C\u7968\u3001\u8BBE\u5907\u53CC\u91CD\u7F16\u53F7\u4E0E\u73B0\u573A\u6807\u8BC6", done: true, owner: "\u5468\u91CE", evidence: "\u73B0\u573A\u7167\u7247 2 \u5F20" },
+            { id: "ST-02", text: "\u65AD\u5F00 690V \u4E3B\u5F00\u5173\u5E76\u6267\u884C\u673A\u68B0\u9501\u5B9A", done: false, owner: "\u5468\u91CE" },
+            { id: "ST-03", text: "\u9A8C\u7535\u3001\u653E\u7535\u5E76\u88C5\u8BBE\u63A5\u5730\u7EBF", done: false, owner: "\u4F55\u5C9A" },
+            { id: "ST-04", text: "\u5168\u4F53\u4F5C\u4E1A\u4EBA\u5458\u786E\u8BA4\u9694\u79BB\u8FB9\u754C", done: false, owner: "\u674E\u9A81" }
+          ]
+        }
+      ]
+    },
+    {
+      id: "WP-260929-015",
+      title: "A \u6BB5\u6BCD\u7EBF\u4FDD\u62A4\u88C5\u7F6E\u6821\u9A8C",
+      device: "BUS-A \xB7 35kV \u6BCD\u7EBF",
+      deviceCodes: ["BUS-A"],
+      crew: "\u4FDD\u62A4\u73ED",
+      owner: "\u8D75\u6E05",
+      windowStart: "2026-09-29T15:00",
+      windowEnd: "2026-09-29T20:00",
+      window: "09-29 15:00 \u2014 20:00",
+      status: "\u6267\u884C\u4E2D",
+      risk: "\u4E8C\u7EA7",
+      revision: 2,
+      reviewRequired: false,
+      holdConflictIds: [],
+      createdAt: "09-29 13:10",
+      isolationPoints: [
+        { id: "IP-211", device: "BUS-A", label: "\u6BCD\u8054 301 \u5F00\u5173", type: "\u5F00\u5173", state: "\u5DF2\u9694\u79BB" },
+        { id: "IP-212", device: "BUS-A", label: "\u4FDD\u62A4\u9000\u51FA\u538B\u677F 3LP", type: "\u9600\u95E8", state: "\u5DF2\u9694\u79BB" }
+      ],
+      steps: [
+        { id: "ST-41", text: "\u6838\u5BF9\u6BCD\u7EBF\u8FD0\u884C\u65B9\u5F0F\u4E0E\u4FDD\u62A4\u53CC\u91CD\u7F16\u53F7", done: true, owner: "\u8D75\u6E05" },
+        { id: "ST-42", text: "\u9000\u51FA\u76F8\u5173\u4FDD\u62A4\u538B\u677F\u5E76\u8BB0\u5F55", done: true, owner: "\u8D75\u6E05", evidence: "\u538B\u677F\u8BB0\u5F55\u5355" },
+        { id: "ST-43", text: "\u6821\u9A8C\u56DE\u8DEF\u63A5\u7EBF\u590D\u6838", done: false, owner: "\u94B1\u6600" }
+      ],
+      history: []
+    },
+    {
+      id: "WP-260929-021",
+      title: "2 \u53F7\u96C6\u7535\u7EBF\u8DEF\u7EDD\u7F18\u5B50\u66F4\u6362",
+      device: "LINE-A2 \xB7 \u6746\u5854 17\u201323",
+      deviceCodes: ["LINE-A2", "BUS-A"],
+      crew: "\u7EBF\u8DEF\u4E00\u73ED",
+      owner: "\u4F55\u5C9A",
+      windowStart: "2026-09-29T18:00",
+      windowEnd: "2026-09-30T02:00",
+      window: "09-29 18:00 \u2014 30 02:00",
+      status: "\u5F85\u6267\u884C",
+      risk: "\u4E00\u7EA7",
+      revision: 2,
+      reviewRequired: false,
+      holdConflictIds: [],
+      createdAt: "09-29 15:56",
+      isolationPoints: [
+        { id: "IP-411", device: "LINE-A2", label: "A2 \u8FDB\u7EBF\u65AD\u8DEF\u5668", type: "\u5F00\u5173", state: "\u5F85\u64CD\u4F5C" },
+        { id: "IP-412", device: "LINE-A2", label: "17 \u53F7\u6746\u63A5\u5730\u5200\u95F8", type: "\u63A5\u5730", state: "\u5F85\u64CD\u4F5C" },
+        { id: "IP-413", device: "BUS-A", label: "\u6BCD\u7EBF\u4FA7\u9694\u79BB\u5200\u95F8", type: "\u5200\u95F8", state: "\u5DF2\u9694\u79BB" }
+      ],
+      steps: [
+        { id: "ST-11", text: "\u6838\u5BF9\u7EBF\u8DEF\u53CC\u91CD\u540D\u79F0\u4E0E\u505C\u7535\u8303\u56F4", done: true, owner: "\u4F55\u5C9A" },
+        { id: "ST-12", text: "\u65AD\u5F00 A2 \u8FDB\u7EBF\u5E76\u5B8C\u6210\u4E94\u9632\u6821\u9A8C", done: false, owner: "\u5B59\u79BE" },
+        { id: "ST-13", text: "17\u300123 \u53F7\u6746\u9A8C\u7535\u5E76\u88C5\u8BBE\u63A5\u5730\u7EBF", done: false, owner: "\u8C2D\u52C7" }
+      ],
+      history: []
+    },
+    {
+      id: "WP-260929-026",
+      title: "A2 \u7EBF\u8DEF\u907F\u96F7\u5668\u591C\u95F4\u6D88\u7F3A",
+      device: "LINE-A2 \xB7 \u6746\u5854 19",
+      deviceCodes: ["LINE-A2", "BUS-A"],
+      crew: "\u7535\u6C14\u4E8C\u73ED",
+      owner: "\u5B59\u79BE",
+      windowStart: "2026-09-29T19:00",
+      windowEnd: "2026-09-29T21:00",
+      window: "09-29 19:00 \u2014 21:00",
+      status: "\u5F85\u590D\u6838",
+      risk: "\u4E8C\u7EA7",
+      revision: 1,
+      reviewRequired: true,
+      reviewReason: "\u8DE8\u73ED\u7EC4\u51B2\u7A81\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406\uFF08CF-001\u3001CF-002\uFF09",
+      holdConflictIds: ["CF-001", "CF-002"],
+      createdAt: "09-29 16:18",
+      isolationPoints: [
+        { id: "IP-421", device: "LINE-A2", label: "19 \u53F7\u6746\u7EBF\u8DEF\u4FA7\u63A5\u5730\u5200\u95F8", type: "\u63A5\u5730", state: "\u5F85\u64CD\u4F5C" },
+        { id: "IP-422", device: "BUS-A", label: "\u6BCD\u7EBF\u4FA7\u9694\u79BB\u5200\u95F8\uFF08\u5171\u7528\uFF09", type: "\u5200\u95F8", state: "\u5F85\u64CD\u4F5C" }
+      ],
+      steps: [
+        { id: "ST-51", text: "\u6838\u5BF9\u7EBF\u8DEF\u53CC\u91CD\u540D\u79F0\u4E0E\u4F5C\u4E1A\u6746\u5854\u8303\u56F4", done: false, owner: "\u5B59\u79BE" },
+        { id: "ST-52", text: "\u9A8C\u7535\u5E76\u88C5\u8BBE\u63A5\u5730\u7EBF\uFF0C\u786E\u8BA4\u4E0E\u7EBF\u8DEF\u4E00\u73ED\u4EA4\u63A5\u6761\u4EF6", done: false, owner: "\u8C2D\u52C7" }
+      ],
+      history: []
+    },
+    {
+      id: "WP-260930-004",
+      title: "\u7BB1\u53D8 12 \u6E29\u63A7\u5668\u66F4\u6362",
+      device: "BOX-12",
+      deviceCodes: ["BOX-12"],
+      crew: "\u7535\u6C14\u4E00\u73ED",
+      owner: "\u5B59\u79BE",
+      windowStart: "2026-09-30T08:00",
+      windowEnd: "2026-09-30T12:00",
+      window: "09-30 08:00 \u2014 12:00",
+      status: "\u5F85\u6267\u884C",
+      risk: "\u4E8C\u7EA7",
+      revision: 1,
+      reviewRequired: false,
+      holdConflictIds: [],
+      createdAt: "09-29 11:32",
+      isolationPoints: [{ id: "IP-501", device: "BOX-12", label: "\u9AD8\u538B\u8D1F\u8377\u5F00\u5173", type: "\u5F00\u5173", state: "\u5F85\u64CD\u4F5C" }],
+      steps: [
+        { id: "ST-21", text: "\u6838\u5BF9\u7BB1\u53D8\u7F16\u53F7\u548C\u4F4E\u538B\u4FA7\u8D1F\u8377\u8F6C\u79FB", done: true, owner: "\u5B59\u79BE" },
+        { id: "ST-22", text: "\u65AD\u5F00\u9AD8\u538B\u8D1F\u8377\u5F00\u5173\u5E76\u9501\u5B9A", done: false, owner: "\u5B59\u79BE" }
+      ],
+      history: []
+    }
+  ];
+  const conflicts = [
+    {
+      id: "CF-002",
+      status: "\u5F85\u5904\u7406",
+      device: "BUS-A",
+      permitId: "WP-260929-026",
+      permitTitle: "A2 \u7EBF\u8DEF\u907F\u96F7\u5668\u591C\u95F4\u6D88\u7F3A",
+      crew: "\u7535\u6C14\u4E8C\u73ED",
+      holderPermitId: "WP-260929-015",
+      holderTitle: "A \u6BB5\u6BCD\u7EBF\u4FDD\u62A4\u88C5\u7F6E\u6821\u9A8C",
+      holderCrew: "\u4FDD\u62A4\u73ED",
+      overlapLabel: "09-29 19:00\u201320:00 \u4E0E\u5DF2\u751F\u6548\u7A97\u53E3 09-29 15:00\u201320:00 \u91CD\u53E0",
+      message: "\u8BBE\u5907 BUS-A \u5DF2\u88AB\u4FDD\u62A4\u73ED\u7684\u6709\u6548\u8BB8\u53EF WP-260929-015 \u5360\u7528\uFF0C\u7535\u6C14\u4E8C\u73ED\u7684\u91CD\u53E0\u7533\u8BF7\u6302\u8D77\uFF0C\u7B49\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u88C1\u51B3\u3002",
+      createdAt: "09-29 16:18"
+    },
+    {
+      id: "CF-001",
+      status: "\u5F85\u5904\u7406",
+      device: "LINE-A2",
+      permitId: "WP-260929-026",
+      permitTitle: "A2 \u7EBF\u8DEF\u907F\u96F7\u5668\u591C\u95F4\u6D88\u7F3A",
+      crew: "\u7535\u6C14\u4E8C\u73ED",
+      holderPermitId: "WP-260929-021",
+      holderTitle: "2 \u53F7\u96C6\u7535\u7EBF\u8DEF\u7EDD\u7F18\u5B50\u66F4\u6362",
+      holderCrew: "\u7EBF\u8DEF\u4E00\u73ED",
+      overlapLabel: "09-29 19:00\u201321:00 \u4E0E\u5DF2\u751F\u6548\u7A97\u53E3 09-29 18:00\u201330 02:00 \u91CD\u53E0",
+      message: "\u8BBE\u5907 LINE-A2 / BUS-A \u5DF2\u88AB\u7EBF\u8DEF\u4E00\u73ED\u7684\u6709\u6548\u8BB8\u53EF WP-260929-021 \u5360\u7528\uFF0C\u7535\u6C14\u4E8C\u73ED\u7684\u91CD\u53E0\u7533\u8BF7\u6302\u8D77\uFF0C\u7B49\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u88C1\u51B3\u3002",
+      createdAt: "09-29 16:18"
+    },
+    {
+      id: "CF-000",
+      status: "\u5DF2\u653E\u884C",
+      device: "BUS-A",
+      permitId: "WP-260929-015",
+      permitTitle: "A \u6BB5\u6BCD\u7EBF\u4FDD\u62A4\u88C5\u7F6E\u6821\u9A8C",
+      crew: "\u4FDD\u62A4\u73ED",
+      holderPermitId: "WP-260928-031",
+      holderTitle: "\u6BCD\u7EBF\u5E26\u7535\u6D4B\u6E29\uFF08\u5DF2\u5B8C\u5DE5\uFF09",
+      holderCrew: "\u7535\u6C14\u4E00\u73ED",
+      overlapLabel: "09-29 15:00\u201316:00 \u4E0E 09-29 13:00\u201316:00 \u91CD\u53E0",
+      message: "\u6D4B\u6E29\u4F5C\u4E1A\u63D0\u524D\u7EC8\u7ED3\u5E76\u6062\u590D\uFF0C\u503C\u73ED\u8D1F\u8D23\u4EBA\u653E\u884C\u4FDD\u62A4\u73ED\u5F00\u5DE5\u3002",
+      createdAt: "09-29 13:30",
+      resolvedAt: "09-29 13:40",
+      resolvedBy: "\u503C\u73ED\u8D1F\u8D23\u4EBA \xB7 \u674E\u9A81",
+      resolutionNote: "\u5E26\u7535\u6D4B\u6E29\u5DF2\u7EC8\u7ED3\uFF0C\u6BCD\u7EBF\u8F6C\u68C0\u4FEE\u72B6\u6001\u540E\u653E\u884C"
+    }
+  ];
+  const audit = [
+    { id: "AE-907", time: "16:42", actor: "\u4F55\u5C9A", action: "\u5B8C\u6210\u6B65\u9AA4", target: "WP-260929-018 / ST-03", detail: "\u9A8C\u7535\u653E\u7535\u5B8C\u6210\uFF0C\u88C5\u8BBE\u63A5\u5730\u7EBF GND-042", permitId: "WP-260929-018" },
+    { id: "AE-906", time: "16:18", actor: "\u7CFB\u7EDF", action: "\u51B2\u7A81\u767B\u8BB0", target: "CF-002 \xB7 BUS-A", detail: "\u7535\u6C14\u4E8C\u73ED WP-260929-026 \u4E0E\u4FDD\u62A4\u73ED WP-260929-015 \u5728 19:00\u201320:00 \u91CD\u53E0\uFF0C\u5DF2\u6302\u8D77\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406", permitId: "WP-260929-026" },
+    { id: "AE-905", time: "16:18", actor: "\u7CFB\u7EDF", action: "\u51B2\u7A81\u767B\u8BB0", target: "CF-001 \xB7 LINE-A2", detail: "\u7535\u6C14\u4E8C\u73ED WP-260929-026 \u4E0E\u7EBF\u8DEF\u4E00\u73ED WP-260929-021 \u5728 19:00\u201321:00 \u91CD\u53E0\uFF0C\u5DF2\u6302\u8D77\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406", permitId: "WP-260929-026" },
+    { id: "AE-903", time: "15:56", actor: "\u674E\u9A81", action: "\u590D\u6838\u901A\u8FC7", target: "WP-260929-021", detail: "\u540C\u610F 18:00 \u5F00\u5DE5\uFF0C\u8981\u6C42\u4E0E\u4FDD\u62A4\u73ED\u786E\u8BA4 BUS-A \u5200\u95F8\u72B6\u6001\u540E\u518D\u64CD\u4F5C", permitId: "WP-260929-021" },
+    { id: "AE-902", time: "15:20", actor: "\u674E\u9A81", action: "\u8FB9\u754C\u8C03\u6574", target: "WP-260929-018 \xB7 r3 \u2192 r4", detail: "\u9694\u79BB\u8FB9\u754C\u589E\u52A0 IP-303 \u53F6\u8F6E\u673A\u68B0\u9501\uFF0C\u65E7\u7248\u6B65\u9AA4\u4E0E\u9694\u79BB\u70B9\u5DF2\u5F52\u6863\u53EF\u67E5", permitId: "WP-260929-018" },
+    { id: "AE-901", time: "14:05", actor: "\u503C\u73ED\u8D1F\u8D23\u4EBA", action: "\u9694\u79BB\u786E\u8BA4", target: "WP-260929-018", detail: "3 \u5904\u9694\u79BB\u70B9\u5168\u90E8\u5230\u4F4D\uFF0C\u8BB8\u53EF\u8FDB\u5165\u6267\u884C\u4E2D", permitId: "WP-260929-018" },
+    { id: "AE-900", time: "13:40", actor: "\u674E\u9A81", action: "\u51B2\u7A81\u653E\u884C", target: "CF-000 \xB7 BUS-A", detail: "\u5E26\u7535\u6D4B\u6E29\u5DF2\u7EC8\u7ED3\uFF0C\u653E\u884C\u4FDD\u62A4\u73ED WP-260929-015 \u5F00\u5DE5", permitId: "WP-260929-015" }
+  ];
+  const devices = [
+    { id: "WTG-03", name: "3 \u53F7\u98CE\u529B\u53D1\u7535\u673A\u7EC4", state: "\u68C0\u4FEE\u9694\u79BB", load: "0 kW", points: 3, crew: "\u673A\u52A1\u4E8C\u73ED" },
+    { id: "BOX-03", name: "3 \u53F7\u7BB1\u5F0F\u53D8\u538B\u5668", state: "\u68C0\u4FEE\u9694\u79BB", load: "0 kW", points: 1, crew: "\u673A\u52A1\u4E8C\u73ED" },
+    { id: "LINE-A2", name: "A2 \u96C6\u7535\u7EBF\u8DEF", state: "\u5F85\u9694\u79BB", load: "0.8 MW", points: 4, crew: "\u7EBF\u8DEF\u4E00\u73ED" },
+    { id: "BUS-A", name: "A \u6BB5 35kV \u6BCD\u7EBF", state: "\u68C0\u4FEE\u9694\u79BB", load: "18.6 MW", points: 4, crew: "\u516C\u7528" },
+    { id: "BOX-12", name: "12 \u53F7\u7BB1\u5F0F\u53D8\u538B\u5668", state: "\u8FD0\u884C", load: "2.4 MW", points: 1, crew: "\u7535\u6C14\u4E00\u73ED" }
+  ];
+  return {
+    site: { name: "\u6D77\u5DDE\u6E7E H2 \u98CE\u7535\u573A", onlineDevices: 30, totalDevices: 32, windSpeed: 10.8 },
+    serverTime: "2026-09-29T16:48:00+08:00",
+    revision: 12,
+    permits: permits.map((permit) => ({ overlapAllowedWith: [], ...permit })),
+    conflicts,
+    audit,
+    devices,
+    dedupHits: 0
+  };
+}
+
+const EFFECTIVE_STATUSES = ["\u5F85\u6267\u884C", "\u6267\u884C\u4E2D", "\u5F85\u7ED3\u675F", "\u5F85\u5173\u95ED"];
+const ISOLATION_CONFIRMED = ["\u6267\u884C\u4E2D", "\u5F85\u7ED3\u675F", "\u5F85\u5173\u95ED"];
+const STATUS_FLOW = {
+  \u5F85\u590D\u6838: "\u5F85\u6267\u884C",
+  \u5F85\u6267\u884C: "\u6267\u884C\u4E2D",
+  \u6267\u884C\u4E2D: "\u5F85\u7ED3\u675F",
+  \u5F85\u7ED3\u675F: "\u5F85\u5173\u95ED",
+  \u5F85\u5173\u95ED: "\u5DF2\u5B8C\u6210",
+  \u5DF2\u5B8C\u6210: "\u5DF2\u5B8C\u6210"
+};
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+function nowParts() {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+  const value = {};
+  for (const part of fmt.formatToParts(/* @__PURE__ */ new Date())) {
+    if (part.type !== "literal") value[part.type] = Number(part.value);
+  }
+  return value;
+}
+function stampNow() {
+  const p = nowParts();
+  return {
+    iso: `${p.year}-${pad2(p.month)}-${pad2(p.day)}T${pad2(p.hour)}:${pad2(p.minute)}:00+08:00`,
+    hm: `${pad2(p.hour)}:${pad2(p.minute)}`,
+    mdhm: `${pad2(p.month)}-${pad2(p.day)} ${pad2(p.hour)}:${pad2(p.minute)}`,
+    compactDate: `${String(p.year).slice(2)}${pad2(p.month)}${pad2(p.day)}`
+  };
+}
+function formatWindow(startKey, endKey) {
+  const fmt = (key, withMonth) => {
+    const [date = "", time = ""] = key.split("T");
+    const [, m = "01", d = "01"] = date.split("-");
+    return `${withMonth ? `${m}-` : ""}${d} ${time}`;
+  };
+  const [sd = "", ed = ""] = [startKey, endKey].map((k) => {
+    var _a;
+    return (_a = k.split("T")[0]) != null ? _a : "";
+  });
+  const sameMonth = sd.slice(0, 7) === ed.slice(0, 7);
+  const sameDay = sd === ed;
+  const endLabel = sameDay ? endKey.split("T")[1] : fmt(endKey, !sameMonth);
+  return `${fmt(startKey, true)} \u2014 ${endLabel}`;
+}
+function overlaps(aStart, aEnd, bStart, bEnd) {
+  return aStart < bEnd && bStart < aEnd;
+}
+function maxSuffix(items, prefix) {
+  return items.reduce((max, item) => {
+    const tail = Number(item.id.replace(prefix, ""));
+    return Number.isFinite(tail) ? Math.max(max, tail) : max;
+  }, 0);
+}
+function createStore() {
+  const state = buildSeedState();
+  return {
+    state,
+    opLog: /* @__PURE__ */ new Map(),
+    seq: {
+      permit: maxSuffix(state.permits, "WP-"),
+      conflict: maxSuffix(state.conflicts, "CF-"),
+      audit: maxSuffix(state.audit, "AE-"),
+      point: 600
+    }
+  };
+}
+function useLedger() {
+  if (!globalThis.__windFarmLedger) globalThis.__windFarmLedger = createStore();
+  return globalThis.__windFarmLedger;
+}
+function snapshot(store) {
+  store.state.serverTime = stampNow().iso;
+  let dedupHits = 0;
+  store.opLog.forEach((record) => {
+    dedupHits += record.hits;
+  });
+  store.state.dedupHits = dedupHits;
+  return structuredClone(store.state);
+}
+function addAudit(store, event) {
+  const id = `AE-${++store.seq.audit}`;
+  store.state.audit.unshift({ id, time: stampNow().hm, ...event });
+}
+function archiveSnapshot(permit, reason) {
+  const snap = {
+    revision: permit.revision,
+    at: stampNow().mdhm,
+    reason,
+    status: permit.status,
+    windowLabel: permit.window,
+    isolationPoints: structuredClone(permit.isolationPoints),
+    steps: structuredClone(permit.steps)
+  };
+  permit.history.unshift(snap);
+  return snap;
+}
+function findConflicts(permit, all) {
+  var _a;
+  const result = [];
+  for (const holder of all) {
+    if (holder.id === permit.id || !EFFECTIVE_STATUSES.includes(holder.status)) continue;
+    if (!overlaps(permit.windowStart, permit.windowEnd, holder.windowStart, holder.windowEnd)) continue;
+    if ((_a = permit.overlapAllowedWith) == null ? void 0 : _a.includes(holder.id)) continue;
+    const codes = permit.deviceCodes.filter((code) => holder.deviceCodes.includes(code));
+    if (codes.length) result.push({ holder, codes });
+  }
+  return result;
+}
+function registerConflicts(store, permit, hits, env) {
+  for (const hit of hits) {
+    const id = `CF-${String(++store.seq.conflict).padStart(3, "0")}`;
+    const conflict = {
+      id,
+      status: "\u5F85\u5904\u7406",
+      device: hit.codes.join(" / "),
+      permitId: permit.id,
+      permitTitle: permit.title,
+      crew: permit.crew,
+      holderPermitId: hit.holder.id,
+      holderTitle: hit.holder.title,
+      holderCrew: hit.holder.crew,
+      overlapLabel: `${permit.window} \u4E0E\u5DF2\u751F\u6548\u7A97\u53E3 ${hit.holder.window} \u91CD\u53E0`,
+      message: `\u8BBE\u5907 ${hit.codes.join(" / ")} \u5DF2\u88AB ${hit.holder.crew}\u7684\u6709\u6548\u8BB8\u53EF ${hit.holder.id} \u5360\u7528\uFF0C${permit.crew}\u7684\u91CD\u53E0\u7533\u8BF7\u6302\u8D77\uFF0C\u7B49\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u88C1\u51B3\u3002`,
+      createdAt: stampNow().mdhm
+    };
+    store.state.conflicts.unshift(conflict);
+    permit.holdConflictIds.push(id);
+    addAudit(store, {
+      actor: "\u7CFB\u7EDF",
+      action: "\u51B2\u7A81\u767B\u8BB0",
+      target: `${id} \xB7 ${conflict.device}`,
+      detail: `${permit.crew} ${permit.id} \u4E0E ${hit.holder.crew} ${hit.holder.id} \u5728 ${hit.codes.join(" / ")} \u4E0A\u65F6\u95F4\u7A97\u91CD\u53E0\uFF0C\u5DF2\u6302\u8D77\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406`,
+      permitId: permit.id,
+      opId: env.opId
+    });
+  }
+  if (hits.length) {
+    permit.reviewRequired = true;
+    const ids = permit.holdConflictIds.join("\u3001");
+    permit.reviewReason = `\u8DE8\u73ED\u7EC4\u51B2\u7A81\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406\uFF08${ids}\uFF09`;
+  }
+}
+function requireDispatcher(env) {
+  if (env.role !== "\u503C\u73ED\u8D1F\u8D23\u4EBA") return "\u8BE5\u64CD\u4F5C\u4EC5\u503C\u73ED\u8D1F\u8D23\u4EBA\u53EF\u6267\u884C";
+}
+function dispatchInternal(store, env) {
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
+  const { state } = store;
+  const bump = () => {
+    state.revision += 1;
+  };
+  const permitById = (id) => state.permits.find((item) => item.id === id);
+  switch (env.type) {
+    case "submit-permit": {
+      const { title, device, deviceCodes, crew, owner, windowStart, windowEnd, risk } = env;
+      if (!(title == null ? void 0 : title.trim()) || !(device == null ? void 0 : device.trim()) || !Array.isArray(deviceCodes) || !deviceCodes.length) return { ok: false, message: "\u4F5C\u4E1A\u540D\u79F0\u4E0E\u5360\u7528\u8BBE\u5907\u4E0D\u80FD\u4E3A\u7A7A" };
+      if (!(windowStart < windowEnd)) return { ok: false, message: "\u8BA1\u5212\u7A97\u53E3\u7684\u5F00\u59CB\u65F6\u95F4\u5FC5\u987B\u65E9\u4E8E\u7ED3\u675F\u65F6\u95F4" };
+      const id = `WP-${stampNow().compactDate}-${String(++store.seq.permit).padStart(3, "0")}`;
+      const permit = {
+        id,
+        title: title.trim(),
+        device: device.trim(),
+        deviceCodes: [...new Set(deviceCodes)],
+        crew,
+        owner,
+        windowStart,
+        windowEnd,
+        window: formatWindow(windowStart, windowEnd),
+        status: "\u5F85\u590D\u6838",
+        risk,
+        revision: 1,
+        reviewRequired: false,
+        holdConflictIds: [],
+        overlapAllowedWith: [],
+        createdAt: stampNow().mdhm,
+        isolationPoints: deviceCodes.map((code, index) => ({
+          id: `IP-${store.seq.point + index}`,
+          device: code,
+          label: index === 0 ? "\u4E3B\u9694\u79BB\u70B9" : `\u5171\u7528\u8FB9\u754C ${code}`,
+          type: "\u5F00\u5173",
+          state: "\u5F85\u64CD\u4F5C"
+        })),
+        steps: [
+          { id: "ST-N1", text: "\u6838\u5BF9\u8BBE\u5907\u53CC\u91CD\u7F16\u53F7\u4E0E\u5DE5\u4F5C\u8303\u56F4", done: false, owner },
+          { id: "ST-N2", text: "\u5B8C\u6210\u9694\u79BB\u3001\u9501\u5B9A\u3001\u9A8C\u7535\u548C\u63A5\u5730", done: false, owner }
+        ],
+        history: []
+      };
+      store.seq.point += deviceCodes.length;
+      state.permits.unshift(permit);
+      addAudit(store, { actor: owner, action: "\u65B0\u5EFA\u8BB8\u53EF", target: id, detail: `${title}\uFF08${permit.device}\uFF0C${permit.window}\uFF0C${risk}\u98CE\u9669\uFF09`, permitId: id, opId: env.opId });
+      const hits = findConflicts(permit, state.permits);
+      registerConflicts(store, permit, hits, env);
+      bump();
+      return hits.length ? { ok: true, message: `\u63D0\u4EA4\u6210\u529F\uFF0C\u4F46\u68C0\u6D4B\u5230\u4E0E ${hits.length} \u4E2A\u5DF2\u751F\u6548\u8BB8\u53EF\u8DE8\u73ED\u7EC4\u5360\u7528\u51B2\u7A81\uFF0C\u5DF2\u6302\u8D77\u7B49\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406` } : { ok: true, message: "\u63D0\u4EA4\u6210\u529F\uFF0C\u5DF2\u8FDB\u5165\u5B89\u5168\u590D\u6838" };
+    }
+    case "advance-permit": {
+      const permit = permitById(String((_a = env.permitId) != null ? _a : ""));
+      if (!permit) return { ok: false, message: "\u8BB8\u53EF\u4E0D\u5B58\u5728" };
+      if (permit.status === "\u5DF2\u5B8C\u6210") return { ok: false, message: "\u8BE5\u8BB8\u53EF\u5DF2\u5173\u95ED" };
+      if (permit.reviewRequired) return { ok: false, message: permit.reviewReason ? `\u8BB8\u53EF\u88AB\u6302\u8D77\uFF1A${permit.reviewReason}` : "\u8BB8\u53EF\u5F85\u590D\u6838\uFF0C\u6682\u4E0D\u80FD\u63A8\u8FDB" };
+      const hits = findConflicts(permit, state.permits);
+      if (hits.length) {
+        registerConflicts(store, permit, hits, env);
+        bump();
+        return { ok: false, message: "\u63A8\u8FDB\u524D\u590D\u67E5\u53D1\u73B0\u8DE8\u73ED\u7EC4\u5360\u7528\u51B2\u7A81\uFF0C\u5DF2\u767B\u8BB0\u5E76\u6302\u8D77\uFF0C\u7B49\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406" };
+      }
+      const from = permit.status;
+      if (from === "\u5F85\u6267\u884C") {
+        const pending = permit.isolationPoints.filter((point) => point.state !== "\u5DF2\u9694\u79BB");
+        if (pending.length) return { ok: false, message: `\u9694\u79BB\u786E\u8BA4\u672A\u901A\u8FC7\uFF1A${pending.map((p) => p.label).join("\u3001")} \u5C1A\u672A\u9694\u79BB` };
+      }
+      const to = STATUS_FLOW[from];
+      permit.status = to;
+      permit.revision += 1;
+      bump();
+      addAudit(store, {
+        actor: env.actor,
+        action: from === "\u5F85\u6267\u884C" ? "\u9694\u79BB\u786E\u8BA4" : "\u6D41\u7A0B\u63A8\u8FDB",
+        target: permit.id,
+        detail: from === "\u5F85\u6267\u884C" ? `${permit.isolationPoints.length} \u5904\u9694\u79BB\u70B9\u5168\u90E8\u5230\u4F4D\uFF0C\u72B6\u6001\u7531\u201C${from}\u201D\u53D8\u66F4\u4E3A\u201C${to}\u201D` : `\u72B6\u6001\u7531\u201C${from}\u201D\u53D8\u66F4\u4E3A\u201C${to}\u201D\uFF08r${permit.revision}\uFF09`,
+        permitId: permit.id,
+        opId: env.opId
+      });
+      return { ok: true, message: `\u5DF2\u63A8\u8FDB\u81F3\u201C${to}\u201D` };
+    }
+    case "toggle-step": {
+      const permit = permitById(String((_b = env.permitId) != null ? _b : ""));
+      const step = permit == null ? void 0 : permit.steps.find((item) => item.id === env.stepId);
+      if (!permit || !step) return { ok: false, message: "\u6B65\u9AA4\u4E0D\u5B58\u5728" };
+      if (permit.reviewRequired) return { ok: false, message: "\u8BB8\u53EF\u5904\u4E8E\u6302\u8D77\u590D\u6838\u72B6\u6001\uFF0C\u73B0\u573A\u6B65\u9AA4\u6682\u505C\u8BB0\u5F55" };
+      step.done = !step.done;
+      if (!step.done) step.evidence = void 0;
+      bump();
+      addAudit(store, {
+        actor: env.actor,
+        action: step.done ? "\u5B8C\u6210\u6B65\u9AA4" : "\u64A4\u9500\u6B65\u9AA4",
+        target: `${permit.id} / ${step.id}`,
+        detail: `${step.text}${step.done ? "\uFF08\u73B0\u573A\u786E\u8BA4\u5DF2\u8BB0\u5F55\uFF09" : "\uFF08\u786E\u8BA4\u5DF2\u64A4\u9500\uFF09"}`,
+        permitId: permit.id,
+        opId: env.opId
+      });
+      return { ok: true, message: step.done ? "\u6B65\u9AA4\u5B8C\u6210\u5DF2\u8BB0\u8D26\u4E00\u6B21" : "\u6B65\u9AA4\u5DF2\u64A4\u9500" };
+    }
+    case "set-point-state": {
+      const permit = permitById(String((_c = env.permitId) != null ? _c : ""));
+      const point = permit == null ? void 0 : permit.isolationPoints.find((item) => item.id === env.pointId);
+      if (!permit || !point) return { ok: false, message: "\u9694\u79BB\u70B9\u4E0D\u5B58\u5728" };
+      if (permit.reviewRequired) return { ok: false, message: "\u8BB8\u53EF\u5904\u4E8E\u6302\u8D77\u590D\u6838\u72B6\u6001\uFF0C\u9694\u79BB\u64CD\u4F5C\u6682\u505C" };
+      const next = String((_d = env.state) != null ? _d : "");
+      if (!["\u5DF2\u9694\u79BB", "\u5F85\u64CD\u4F5C", "\u5DF2\u6062\u590D"].includes(next)) return { ok: false, message: "\u9694\u79BB\u70B9\u72B6\u6001\u4E0D\u5408\u6CD5" };
+      if (point.state === next) return { ok: false, message: "\u9694\u79BB\u70B9\u72B6\u6001\u672A\u53D8\u5316" };
+      const before = point.state;
+      point.state = next;
+      bump();
+      addAudit(store, { actor: env.actor, action: "\u9694\u79BB\u64CD\u4F5C", target: `${permit.id} / ${point.id}`, detail: `${point.device} ${point.label}\uFF1A${before} \u2192 ${next}`, permitId: permit.id, opId: env.opId });
+      return { ok: true, message: `${point.label}\u5DF2\u8BB0\u4E3A\u201C${next}\u201D` };
+    }
+    case "resolve-conflict": {
+      const guard = requireDispatcher(env);
+      if (guard) return { ok: false, message: guard };
+      const conflict = state.conflicts.find((item) => {
+        var _a2;
+        return item.id === String((_a2 = env.conflictId) != null ? _a2 : "");
+      });
+      if (!conflict) return { ok: false, message: "\u51B2\u7A81\u8BB0\u5F55\u4E0D\u5B58\u5728" };
+      if (conflict.status !== "\u5F85\u5904\u7406") return { ok: false, message: `\u51B2\u7A81 ${conflict.id} \u5DF2\u5904\u7406\uFF08${conflict.status}\uFF09` };
+      const note = String((_e = env.note) != null ? _e : "").trim();
+      const now = stampNow().mdhm;
+      if (env.decision === "\u653E\u884C") {
+        conflict.status = "\u5DF2\u653E\u884C";
+        conflict.resolvedAt = now;
+        conflict.resolvedBy = `\u503C\u73ED\u8D1F\u8D23\u4EBA \xB7 ${env.actor}`;
+        conflict.resolutionNote = note || "\u503C\u73ED\u8D1F\u8D23\u4EBA\u786E\u8BA4\u5148\u540E\u987A\u5E8F\u4E0E\u4EA4\u63A5\u6761\u4EF6\uFF0C\u5141\u8BB8\u7EE7\u7EED";
+      } else if (env.decision === "\u6539\u671F") {
+        conflict.status = "\u5F85\u6539\u671F";
+        conflict.resolvedAt = now;
+        conflict.resolvedBy = `\u503C\u73ED\u8D1F\u8D23\u4EBA \xB7 ${env.actor}`;
+        conflict.resolutionNote = note || "\u4E0D\u5141\u8BB8\u540C\u65F6\u5F00\u5DE5\uFF0C\u8981\u6C42\u7533\u8BF7\u73ED\u7EC4\u8C03\u6574\u4F5C\u4E1A\u7A97\u53E3\u540E\u91CD\u65B0\u63D0\u4EA4";
+      } else {
+        return { ok: false, message: "\u88C1\u51B3\u7C7B\u578B\u4E0D\u5408\u6CD5" };
+      }
+      const permit = permitById(conflict.permitId);
+      if (permit && env.decision === "\u653E\u884C") {
+        permit.holdConflictIds = permit.holdConflictIds.filter((id) => id !== conflict.id);
+        if (!permit.overlapAllowedWith.includes(conflict.holderPermitId)) permit.overlapAllowedWith.push(conflict.holderPermitId);
+        if (!permit.holdConflictIds.length) {
+          permit.reviewRequired = false;
+          permit.reviewReason = void 0;
+        }
+      }
+      bump();
+      addAudit(store, {
+        actor: `\u503C\u73ED\u8D1F\u8D23\u4EBA \xB7 ${env.actor}`,
+        action: env.decision === "\u653E\u884C" ? "\u51B2\u7A81\u653E\u884C" : "\u51B2\u7A81\u8981\u6C42\u6539\u671F",
+        target: `${conflict.id} \xB7 ${conflict.device}`,
+        detail: env.decision === "\u653E\u884C" ? `\u540C\u610F ${conflict.crew} ${conflict.permitId} \u5728\u843D\u5B9E\u4EA4\u63A5\u6761\u4EF6\u540E\u7EE7\u7EED\uFF1B${note || "\u6309\u5148\u540E\u987A\u5E8F\u5F00\u5DE5"}` : `\u9A73\u56DE\u91CD\u53E0\u7A97\u53E3\uFF0C\u8981\u6C42 ${conflict.crew} ${conflict.permitId} \u6539\u671F\u540E\u91CD\u62A5\uFF1B${note || ""}`,
+        permitId: conflict.permitId,
+        opId: env.opId
+      });
+      return { ok: true, message: env.decision === "\u653E\u884C" ? "\u5DF2\u653E\u884C\uFF0C\u7533\u8BF7\u73ED\u7EC4\u53EF\u7EE7\u7EED\u63A8\u8FDB\u8BB8\u53EF" : "\u5DF2\u8981\u6C42\u7533\u8BF7\u73ED\u7EC4\u6539\u671F" };
+    }
+    case "reschedule-permit": {
+      const permit = permitById(String((_f = env.permitId) != null ? _f : ""));
+      if (!permit) return { ok: false, message: "\u8BB8\u53EF\u4E0D\u5B58\u5728" };
+      const { windowStart, windowEnd } = env;
+      if (!(windowStart < windowEnd)) return { ok: false, message: "\u65B0\u7A97\u53E3\u7684\u5F00\u59CB\u65F6\u95F4\u5FC5\u987B\u65E9\u4E8E\u7ED3\u675F\u65F6\u95F4" };
+      const waits = state.conflicts.filter((c) => c.permitId === permit.id && c.status === "\u5F85\u6539\u671F");
+      if (!waits.length) return { ok: false, message: "\u8BE5\u8BB8\u53EF\u6CA1\u6709\u5F85\u6539\u671F\u88C1\u51B3\uFF0C\u65E0\u9700\u6539\u671F\u91CD\u62A5" };
+      const candidate = { ...permit, windowStart, windowEnd };
+      const hits = findConflicts(candidate, state.permits);
+      if (hits.length) return { ok: false, message: "\u65B0\u7A97\u53E3\u4ECD\u4E0E\u5DF2\u751F\u6548\u8BB8\u53EF\u91CD\u53E0\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u65F6\u95F4" };
+      const oldWindow = permit.window;
+      permit.windowStart = windowStart;
+      permit.windowEnd = windowEnd;
+      permit.window = formatWindow(windowStart, windowEnd);
+      archiveSnapshot(permit, `\u4F5C\u4E1A\u7A97\u53E3\u6539\u671F\uFF1A${oldWindow} \u2192 ${permit.window}`);
+      permit.revision += 1;
+      for (const conflict of waits) {
+        conflict.status = "\u5DF2\u6539\u671F";
+        conflict.resolutionNote = `${(_g = conflict.resolutionNote) != null ? _g : ""}\uFF1B\u7533\u8BF7\u73ED\u7EC4\u5DF2\u6539\u671F\u4E3A ${permit.window}`.trim();
+      }
+      permit.holdConflictIds = permit.holdConflictIds.filter((id) => !waits.some((c) => c.id === id));
+      permit.overlapAllowedWith = [];
+      permit.reviewRequired = false;
+      permit.reviewReason = void 0;
+      bump();
+      addAudit(store, { actor: env.actor, action: "\u4F5C\u4E1A\u6539\u671F", target: permit.id, detail: `${oldWindow} \u2192 ${permit.window}\uFF08r${permit.revision}\uFF09\uFF0C\u5360\u7528\u590D\u67E5\u901A\u8FC7\uFF0C\u91CD\u65B0\u8FDB\u5165\u5B89\u5168\u590D\u6838`, permitId: permit.id, opId: env.opId });
+      return { ok: true, message: "\u6539\u671F\u6210\u529F\uFF0C\u5360\u7528\u590D\u67E5\u901A\u8FC7\uFF0C\u8BB8\u53EF\u91CD\u65B0\u8FDB\u5165\u590D\u6838" };
+    }
+    case "adjust-boundary": {
+      const permit = permitById(String((_h = env.permitId) != null ? _h : ""));
+      if (!permit) return { ok: false, message: "\u8BB8\u53EF\u4E0D\u5B58\u5728" };
+      if (permit.status === "\u5DF2\u5B8C\u6210") return { ok: false, message: "\u5DF2\u5173\u95ED\u8BB8\u53EF\u4E0D\u80FD\u8C03\u6574\u9694\u79BB\u8FB9\u754C" };
+      const op = String((_i = env.op) != null ? _i : "");
+      const oldRevision = permit.revision;
+      archiveSnapshot(permit, op === "remove" ? `\u9694\u79BB\u8FB9\u754C\u8C03\u6574\uFF08\u79FB\u9664\u9694\u79BB\u70B9 ${env.pointId}\uFF09` : "\u9694\u79BB\u8FB9\u754C\u8C03\u6574\uFF08\u65B0\u589E\u9694\u79BB\u70B9\uFF09");
+      let affectedCode = "";
+      let detail = "";
+      if (op === "remove") {
+        const index = permit.isolationPoints.findIndex((item) => item.id === env.pointId);
+        if (index < 0) return { ok: false, message: "\u9694\u79BB\u70B9\u4E0D\u5B58\u5728" };
+        const [removed] = permit.isolationPoints.splice(index, 1);
+        affectedCode = removed.device;
+        detail = `\u79FB\u9664 ${removed.device} ${removed.label}\uFF08${removed.id}\uFF09`;
+      } else if (op === "add") {
+        const { device, label, pointType } = env;
+        if (!(device == null ? void 0 : device.trim()) || !(label == null ? void 0 : label.trim())) return { ok: false, message: "\u65B0\u9694\u79BB\u70B9\u7684\u8BBE\u5907\u4E0E\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A" };
+        const point = { id: `IP-${++store.seq.point}`, device: device.trim(), label: label.trim(), type: pointType != null ? pointType : "\u5F00\u5173", state: "\u5F85\u64CD\u4F5C" };
+        permit.isolationPoints.push(point);
+        if (!permit.deviceCodes.includes(point.device)) permit.deviceCodes.push(point.device);
+        affectedCode = point.device;
+        detail = `\u65B0\u589E ${point.device} ${point.label}\uFF08${point.id}\uFF0C\u5F85\u64CD\u4F5C\uFF09`;
+      } else {
+        return { ok: false, message: "\u8FB9\u754C\u8C03\u6574\u7C7B\u578B\u4E0D\u5408\u6CD5" };
+      }
+      permit.revision += 1;
+      bump();
+      addAudit(store, { actor: env.actor, action: "\u8FB9\u754C\u8C03\u6574", target: `${permit.id} \xB7 r${oldRevision} \u2192 r${permit.revision}`, detail: `${detail}\uFF1B\u8C03\u6574\u524D\u7684\u6B65\u9AA4\u4E0E\u9694\u79BB\u70B9\u5DF2\u5F52\u6863\uFF0C\u53EF\u5728\u4FEE\u8BA2\u5386\u53F2\u4E2D\u67E5\u770B`, permitId: permit.id, opId: env.opId });
+      const ripple = state.permits.filter(
+        (other) => ISOLATION_CONFIRMED.includes(other.status) && other.deviceCodes.includes(affectedCode) && (other.id === permit.id || other.isolationPoints.some((p) => p.device === affectedCode))
+      );
+      for (const target of ripple) {
+        if (target.reviewRequired) continue;
+        target.reviewRequired = true;
+        target.reviewReason = `${permit.id === target.id ? "\u672C\u8BB8\u53EF" : permit.id} \u9694\u79BB\u8FB9\u754C\u53D1\u751F\u53D8\u5316\uFF08${affectedCode}\uFF09\uFF0C\u5DF2\u5230\u9694\u79BB\u786E\u8BA4\uFF0C\u987B\u7531\u503C\u73ED\u8D1F\u8D23\u4EBA\u91CD\u65B0\u590D\u6838`;
+        bump();
+        addAudit(store, { actor: "\u7CFB\u7EDF", action: "\u89E6\u53D1\u590D\u6838", target: target.id, detail: `\u9694\u79BB\u8FB9\u754C\u53D8\u5316\u6D89\u53CA ${affectedCode}\uFF0C${target.crew}\u8BE5\u8BB8\u53EF\u5DF2\u5B8C\u6210\u9694\u79BB\u786E\u8BA4\uFF0C\u56DE\u9000\u81F3\u5F85\u590D\u6838\uFF0C\u539F\u6B65\u9AA4\u4E0E\u5BA1\u8BA1\u4FDD\u7559\u53EF\u67E5`, permitId: target.id, opId: env.opId });
+      }
+      return {
+        ok: true,
+        message: ripple.length ? `\u8FB9\u754C\u5DF2\u8C03\u6574\u81F3 r${permit.revision}\uFF1B${ripple.map((p) => p.id).join("\u3001")} \u5DF2\u5230\u9694\u79BB\u786E\u8BA4\uFF0C\u987B\u91CD\u65B0\u590D\u6838` : `\u8FB9\u754C\u5DF2\u8C03\u6574\u81F3 r${permit.revision}`
+      };
+    }
+    case "recheck-permit": {
+      const guard = requireDispatcher(env);
+      if (guard) return { ok: false, message: guard };
+      const permit = permitById(String((_j = env.permitId) != null ? _j : ""));
+      if (!permit) return { ok: false, message: "\u8BB8\u53EF\u4E0D\u5B58\u5728" };
+      if (!permit.reviewRequired) return { ok: false, message: "\u8BE5\u8BB8\u53EF\u5F53\u524D\u4E0D\u5904\u4E8E\u5F85\u590D\u6838\u72B6\u6001" };
+      const pendingConflicts = state.conflicts.filter((c) => c.permitId === permit.id && (c.status === "\u5F85\u5904\u7406" || c.status === "\u5F85\u6539\u671F"));
+      if (pendingConflicts.length) return { ok: false, message: `\u4ECD\u6709\u672A\u51B3\u51B2\u7A81 ${pendingConflicts.map((c) => c.id).join("\u3001")}\uFF0C\u8BF7\u5148\u5728\u51B2\u7A81\u53F0\u8D26\u4E2D\u88C1\u51B3` };
+      const reason = (_k = permit.reviewReason) != null ? _k : "\u503C\u73ED\u8D1F\u8D23\u4EBA\u91CD\u65B0\u590D\u6838";
+      permit.reviewRequired = false;
+      permit.reviewReason = void 0;
+      bump();
+      addAudit(store, { actor: `\u503C\u73ED\u8D1F\u8D23\u4EBA \xB7 ${env.actor}`, action: "\u590D\u6838\u901A\u8FC7", target: permit.id, detail: `${reason}\uFF1B\u590D\u6838\u901A\u8FC7\uFF0C\u8BB8\u53EF\u53EF\u7EE7\u7EED\u6D41\u8F6C\uFF08\u4FDD\u7559\u539F\u6B65\u9AA4\u4E0E\u5386\u53F2\u4FEE\u8BA2\uFF09`, permitId: permit.id, opId: env.opId });
+      return { ok: true, message: "\u590D\u6838\u901A\u8FC7\uFF0C\u8BB8\u53EF\u89E3\u9664\u6302\u8D77" };
+    }
+    default:
+      return { ok: false, message: "\u672A\u77E5\u64CD\u4F5C\u7C7B\u578B" };
+  }
+}
+function dispatch(store, env) {
+  var _a;
+  if (!(env == null ? void 0 : env.opId)) return { ok: false, duplicate: false, message: "\u7F3A\u5C11\u64CD\u4F5C\u7F16\u53F7 opId", state: snapshot(store) };
+  const seen = store.opLog.get(env.opId);
+  if (seen) {
+    seen.hits += 1;
+    return { ok: seen.ok, duplicate: true, message: (_a = seen.message) != null ? _a : "\u91CD\u590D\u8865\u4F20\u5DF2\u5FFD\u7565\uFF0C\u672A\u4EA7\u751F\u65B0\u7684\u53D8\u5316", state: snapshot(store) };
+  }
+  const result = dispatchInternal(store, env);
+  if (result.ok) store.opLog.set(env.opId, { ok: true, message: result.message, hits: 0 });
+  return { ok: result.ok, duplicate: false, message: result.message, state: snapshot(store) };
+}
+
 const collections = {
   'heroicons': () => import('../_/icons.mjs').then(m => m.default),
 };
 
 const DEFAULT_ENDPOINT = "https://api.iconify.design";
-const _jGIuti = defineCachedEventHandler(async (event) => {
+const _f46lBN = defineCachedEventHandler(async (event) => {
   const url = getRequestURL(event);
   if (!url)
     return createError$1({ status: 400, message: "Invalid icon request" });
@@ -5353,16 +6069,20 @@ const _jGIuti = defineCachedEventHandler(async (event) => {
 
 const _SxA8c9 = defineEventHandler(() => {});
 
-const _lazy_TXaztK = () => import('../routes/api/operations.get.mjs');
-const _lazy_0xAmBp = () => import('../routes/renderer.mjs').then(function (n) { return n.r; });
+const _lazy_MW3sO_ = () => import('../routes/api/action.post.mjs');
+const _lazy_18G0HU = () => import('../routes/api/operations.get.mjs');
+const _lazy_ZggETD = () => import('../routes/api/state.get.mjs');
+const _lazy_S_UqeC = () => import('../routes/renderer.mjs').then(function (n) { return n.r; });
 
 const handlers = [
-  { route: '', handler: _j0L_yP, lazy: false, middleware: true, method: undefined },
-  { route: '/api/operations', handler: _lazy_TXaztK, lazy: true, middleware: false, method: "get" },
-  { route: '/__nuxt_error', handler: _lazy_0xAmBp, lazy: true, middleware: false, method: undefined },
-  { route: '/api/_nuxt_icon/:collection', handler: _jGIuti, lazy: false, middleware: false, method: undefined },
+  { route: '', handler: _3Vjyl7, lazy: false, middleware: true, method: undefined },
+  { route: '/api/action', handler: _lazy_MW3sO_, lazy: true, middleware: false, method: "post" },
+  { route: '/api/operations', handler: _lazy_18G0HU, lazy: true, middleware: false, method: "get" },
+  { route: '/api/state', handler: _lazy_ZggETD, lazy: true, middleware: false, method: "get" },
+  { route: '/__nuxt_error', handler: _lazy_S_UqeC, lazy: true, middleware: false, method: undefined },
+  { route: '/api/_nuxt_icon/:collection', handler: _f46lBN, lazy: false, middleware: false, method: undefined },
   { route: '/__nuxt_island/**', handler: _SxA8c9, lazy: false, middleware: false, method: undefined },
-  { route: '/**', handler: _lazy_0xAmBp, lazy: true, middleware: false, method: undefined }
+  { route: '/**', handler: _lazy_S_UqeC, lazy: true, middleware: false, method: undefined }
 ];
 
 function createNitroApp() {
@@ -5778,5 +6498,5 @@ trapUnhandledNodeErrors();
 setupGracefulShutdown(listener, nitroApp);
 const nodeServer = {};
 
-export { $fetch$1 as $, serialize$1 as A, isEqual as B, parseQuery as C, withTrailingSlash as D, withoutTrailingSlash as E, nodeServer as F, defineRenderHandler as a, buildAssetsURL as b, createError$1 as c, defineEventHandler as d, encodePath as e, getRouteRules as f, getQuery as g, getResponseStatusText as h, getResponseStatus as i, useNitroApp as j, defuFn as k, klona as l, parseURL as m, decodePath as n, defu as o, publicAssetsURL as p, hasProtocol as q, isScriptProtocol as r, joinURL as s, createDefu as t, useRuntimeConfig as u, sanitizeStatusCode as v, withQuery as w, baseURL as x, createHooks as y, hash$1 as z };
+export { $fetch$1 as $, createDefu as A, sanitizeStatusCode as B, baseURL as C, createHooks as D, serialize$1 as E, isEqual as F, parseQuery as G, withTrailingSlash as H, withoutTrailingSlash as I, nodeServer as J, dispatch as a, buildAssetsURL as b, useRuntimeConfig as c, defineEventHandler as d, encodePath as e, defineRenderHandler as f, getQuery as g, createError$1 as h, getRouteRules as i, getResponseStatusText as j, getResponseStatus as k, useNitroApp as l, hash$1 as m, defuFn as n, parseURL as o, publicAssetsURL as p, decodePath as q, readBody as r, snapshot as s, defu as t, useLedger as u, hasProtocol as v, isScriptProtocol as w, joinURL as x, klona as y, withQuery as z };
 //# sourceMappingURL=nitro.mjs.map

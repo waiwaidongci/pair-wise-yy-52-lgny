@@ -1,65 +1,145 @@
 import { defineStore } from 'pinia'
-import type { AuditEvent, Permit } from '~/types'
-import { auditEvents as seedAudit, permits as seedPermits } from '~/utils/mock'
+import type { ActionEnvelope, ActionResponse, ActorRole, OperationsState } from '~/types'
 
-const STORAGE_KEY = 'yy52-permit-ops-v1'
+const QUEUE_KEY = 'yy52-offline-queue-v2'
+
+interface QueuedOp {
+  env: ActionEnvelope
+  label: string
+  at: string
+}
+
+let opSeq = 0
+function newOpId() {
+  opSeq += 1
+  return `op-${Date.now()}-${opSeq}-${Math.random().toString(36).slice(2, 7)}`
+}
 
 export const useOperationsStore = defineStore('operations', () => {
-  const permits = ref<Permit[]>(structuredClone(seedPermits))
-  const audit = ref<AuditEvent[]>(structuredClone(seedAudit))
-  const connection = ref<'在线' | '重连中'>('在线')
-  const pendingRetry = ref(0)
-  const latestAlert = ref('18:00–20:00 LINE-A2 存在跨班组重叠作业')
-  const loaded = ref(false)
+  const state = ref<OperationsState | null>(null)
+  const connection = ref<'在线' | '离线'>('在线')
+  const queue = ref<QueuedOp[]>([])
+  const lastBatch = ref<QueuedOp[]>([])
+  const lastMessage = ref('')
+  const actor = ref('李骁')
+  const role = ref<ActorRole>('值班负责人')
 
-  function persist() {
-    if (import.meta.client) localStorage.setItem(STORAGE_KEY, JSON.stringify({ permits: permits.value, audit: audit.value }))
+  const loaded = computed(() => state.value !== null)
+  const permits = computed(() => state.value?.permits ?? [])
+  const conflicts = computed(() => state.value?.conflicts ?? [])
+  const audit = computed(() => state.value?.audit ?? [])
+  const devices = computed(() => state.value?.devices ?? [])
+  const pendingConflicts = computed(() => conflicts.value.filter((item) => item.status === '待处理'))
+  const latestAlert = computed(() => pendingConflicts.value[0]?.message ?? '')
+
+  function hydrate(next: OperationsState) {
+    state.value = next
   }
-  function restore() {
-    if (!import.meta.client || loaded.value) return
-    const raw = localStorage.getItem(STORAGE_KEY)
+
+  async function fetchState() {
+    const fresh = await $fetch<OperationsState>('/api/state')
+    hydrate(fresh)
+    return fresh
+  }
+
+  function restoreQueue() {
+    if (!import.meta.client) return
+    const raw = localStorage.getItem(QUEUE_KEY)
     if (raw) {
-      const draft = JSON.parse(raw)
-      permits.value = draft.permits
-      audit.value = draft.audit
+      try { queue.value = JSON.parse(raw) } catch { /* 忽略损坏的队列 */ }
     }
-    loaded.value = true
   }
-  function addAudit(actor: string, action: string, target: string, detail: string) {
-    audit.value.unshift({ id: `AE-${Date.now().toString().slice(-5)}`, time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }), actor, action, target, detail })
-    persist()
+  function persistQueue() {
+    if (import.meta.client) localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.value))
   }
-  function advancePermit(id: string) {
-    const permit = permits.value.find((item) => item.id === id)
-    if (!permit) return
-    const flow: Record<string, Permit['status']> = { 待复核: '待执行', 待执行: '执行中', 执行中: '待结束', 待结束: '待关闭', 待关闭: '已完成' }
-    const next = flow[permit.status]
-    if (!next) return
-    if (permit.status === '待复核' && permit.reviewRequired && !confirm('该许可存在待复核冲突，确认由值班负责人承担审批责任？')) return
-    permit.status = next
-    permit.reviewRequired = false
-    permit.revision += 1
-    addAudit('当前用户', '流程推进', permit.id, `状态由“${Object.keys(flow).find((key) => flow[key] === next)}”变更为“${next}”`)
-  }
-  function toggleStep(permitId: string, stepId: string) {
-    const permit = permits.value.find((item) => item.id === permitId)
-    const step = permit?.steps.find((item) => item.id === stepId)
-    if (!permit || !step) return
-    const previous = permit.steps.filter((item) => item.done).length
-    step.done = !step.done
-    if (previous === 2 && permit.steps.filter((item) => item.done).length === 3 && permit.id === 'WP-260929-018') {
-      latestAlert.value = 'WP-260929-018 检测到 LINE-A2 共用母线隔离点，需要复核'
-      permit.reviewRequired = true
-      permits.value.find((item) => item.id === 'WP-260929-021')!.reviewRequired = true
-    }
-    addAudit('当前用户', step.done ? '完成步骤' : '撤销步骤', `${permit.id} / ${step.id}`, step.text)
-  }
-  function addPermit(permit: Permit) { permits.value.unshift(permit); addAudit('当前用户', '新建许可', permit.id, permit.title) }
-  function acceptAlert() { latestAlert.value = ''; addAudit('值班负责人', '确认冲突', '跨班组重叠', '同意调整 LINE-A2 作业时间，不允许同时开工') }
-  function markOffline() { connection.value = '重连中'; pendingRetry.value += 1 }
-  function markOnline() { connection.value = '在线' }
-  function retryPending() { pendingRetry.value = 0; connection.value = '在线'; addAudit('系统', '重试成功', '实时通道', '断线期间的现场确认已补传') }
 
-  restore()
-  return { permits, audit, connection, pendingRetry, latestAlert, advancePermit, toggleStep, addPermit, acceptAlert, markOffline, markOnline, retryPending, restore }
+  /**
+   * 所有写操作的唯一入口：自动附带稳定 opId。
+   * 在线时直发，服务端成功后以返回的账本快照替换本地状态；
+   * 离线时入队，上线后补传——同一 opId 在服务端只产生一次变化。
+   */
+  async function dispatch(
+    type: ActionEnvelope['type'],
+    payload: Omit<ActionEnvelope, 'opId' | 'actor' | 'role' | 'type'>,
+    label: string,
+  ): Promise<ActionResponse & { queued?: boolean }> {
+    const env: ActionEnvelope = { opId: newOpId(), actor: actor.value, role: role.value, type, ...payload }
+    if (connection.value === '离线') {
+      queue.value.push({ env, label, at: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }) })
+      persistQueue()
+      lastMessage.value = `离线：「${label}」已进入补传队列（${queue.value.length} 项）`
+      return { ok: true, duplicate: false, queued: true, state: state.value as OperationsState }
+    }
+    try {
+      const result = await $fetch<ActionResponse>('/api/action', { method: 'POST', body: env })
+      hydrate(result.duplicate ? state.value! : result.state)
+      lastMessage.value = result.duplicate ? `重复补传已忽略：${label}（账本无新变化）` : (result.message ?? label)
+      return result
+    } catch {
+      queue.value.push({ env, label, at: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }) })
+      connection.value = '离线'
+      persistQueue()
+      return { ok: true, duplicate: false, queued: true, state: state.value as OperationsState }
+    }
+  }
+
+  async function goOffline() {
+    connection.value = '离线'
+  }
+  async function goOnline() {
+    connection.value = '在线'
+    await flushQueue()
+  }
+
+  /** 上线补传：逐条重放队列中的原始操作（opId 不变，重复部分服务端幂等忽略） */
+  async function flushQueue() {
+    if (!queue.value.length) return { sent: 0, duplicates: 0 }
+    const batch = [...queue.value]
+    const failed: QueuedOp[] = []
+    let duplicates = 0
+    for (const item of batch) {
+      try {
+        const result = await $fetch<ActionResponse>('/api/action', { method: 'POST', body: item.env })
+        if (result.duplicate) duplicates += 1
+        if (result.state) hydrate(result.state)
+      } catch {
+        // 补传未送达（仍为离线）：保留该项，等下一次上线重发
+        failed.push(item)
+      }
+    }
+    if (failed.length) {
+      queue.value = failed
+      persistQueue()
+      connection.value = '离线'
+      lastMessage.value = `补传中断：${failed.length} 项未送达，仍保留在队列中`
+      return { sent: batch.length - failed.length, duplicates }
+    }
+    lastBatch.value = batch
+    queue.value = []
+    persistQueue()
+    lastMessage.value = `补传完成：${batch.length} 项操作${duplicates ? `，其中 ${duplicates} 项为重复补传，只产生一次变化` : '，全部为首次生效'}`
+    return { sent: batch.length, duplicates }
+  }
+
+  /** 演示用：把上一批已补传的操作原样再发一次，验证服务端去重（账本不产生第二次变化） */
+  async function replayLastBatch() {
+    if (!lastBatch.value.length) return
+    for (const item of lastBatch.value) {
+      const result = await $fetch<ActionResponse>('/api/action', { method: 'POST', body: item.env })
+      hydrate(result.state)
+    }
+    lastMessage.value = `已重放 ${lastBatch.value.length} 项补传，服务端识别为重复操作，账本与审计均无新增`
+  }
+
+  function setIdentity(nextActor: string, nextRole: ActorRole) {
+    actor.value = nextActor
+    role.value = nextRole
+  }
+
+  restoreQueue()
+  return {
+    state, connection, queue, actor, role, lastMessage, lastBatch, loaded,
+    permits, conflicts, audit, devices, pendingConflicts, latestAlert,
+    hydrate, fetchState, dispatch, goOffline, goOnline, flushQueue, replayLastBatch, setIdentity,
+  }
 })
