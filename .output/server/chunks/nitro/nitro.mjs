@@ -853,6 +853,7 @@ function getRequestURL(event, opts = {}) {
 }
 
 const RawBodySymbol = Symbol.for("h3RawBody");
+const ParsedBodySymbol = Symbol.for("h3ParsedBody");
 const PayloadMethods$1 = ["PATCH", "POST", "PUT", "DELETE"];
 function readRawBody(event, encoding = "utf8") {
   assertMethod(event, PayloadMethods$1);
@@ -922,6 +923,26 @@ function readRawBody(event, encoding = "utf8") {
   const result = encoding ? promise.then((buff) => buff.toString(encoding)) : promise;
   return result;
 }
+async function readBody(event, options = {}) {
+  const request = event.node.req;
+  if (hasProp(request, ParsedBodySymbol)) {
+    return request[ParsedBodySymbol];
+  }
+  const contentType = request.headers["content-type"] || "";
+  const body = await readRawBody(event);
+  let parsed;
+  if (contentType === "application/json") {
+    parsed = _parseJSON(body, options.strict ?? true);
+  } else if (contentType.startsWith("application/x-www-form-urlencoded")) {
+    parsed = _parseURLEncodedBody(body);
+  } else if (contentType.startsWith("text/")) {
+    parsed = body;
+  } else {
+    parsed = _parseJSON(body, options.strict ?? false);
+  }
+  request[ParsedBodySymbol] = parsed;
+  return parsed;
+}
 function getRequestWebStream(event) {
   if (!PayloadMethods$1.includes(event.method)) {
     return;
@@ -955,6 +976,35 @@ function getRequestWebStream(event) {
       });
     }
   });
+}
+function _parseJSON(body = "", strict) {
+  if (!body) {
+    return void 0;
+  }
+  try {
+    return destr(body, { strict });
+  } catch {
+    throw createError$1({
+      statusCode: 400,
+      statusMessage: "Bad Request",
+      message: "Invalid JSON body"
+    });
+  }
+}
+function _parseURLEncodedBody(body) {
+  const form = new URLSearchParams(body);
+  const parsedForm = /* @__PURE__ */ Object.create(null);
+  for (const [key, value] of form.entries()) {
+    if (hasProp(parsedForm, key)) {
+      if (!Array.isArray(parsedForm[key])) {
+        parsedForm[key] = [parsedForm[key]];
+      }
+      parsedForm[key].push(value);
+    } else {
+      parsedForm[key] = value;
+    }
+  }
+  return parsedForm;
 }
 
 function handleCacheHeaders(event, opts) {
@@ -4406,7 +4456,7 @@ function _expandFromEnv(value) {
 const _inlineRuntimeConfig = {
   "app": {
     "baseURL": "/",
-    "buildId": "39efcce8-b443-49dc-aba5-a6f8ce6e2a42",
+    "buildId": "03f5b486-b83a-4b03-9cec-27d19d7b3dc4",
     "buildAssetsDir": "/_nuxt/",
     "cdnURL": ""
   },
@@ -4870,170 +4920,177 @@ async function errorHandler(error, event) {
 
 const script = "\"use strict\";(()=>{const t=window,e=document.documentElement,c=[\"dark\",\"light\"],n=getStorageValue(\"localStorage\",\"nuxt-color-mode\")||\"system\";let i=n===\"system\"?u():n;const r=e.getAttribute(\"data-color-mode-forced\");r&&(i=r),l(i),t[\"__NUXT_COLOR_MODE__\"]={preference:n,value:i,getColorScheme:u,addColorScheme:l,removeColorScheme:d};function l(o){const s=\"\"+o+\"\",a=\"\";e.classList?e.classList.add(s):e.className+=\" \"+s,a&&e.setAttribute(\"data-\"+a,o)}function d(o){const s=\"\"+o+\"\",a=\"\";e.classList?e.classList.remove(s):e.className=e.className.replace(new RegExp(s,\"g\"),\"\"),a&&e.removeAttribute(\"data-\"+a)}function f(o){return t.matchMedia(\"(prefers-color-scheme\"+o+\")\")}function u(){if(t.matchMedia&&f(\"\").media!==\"not all\"){for(const o of c)if(f(\":\"+o).matches)return o}return\"light\"}})();function getStorageValue(t,e){switch(t){case\"localStorage\":return window.localStorage.getItem(e);case\"sessionStorage\":return window.sessionStorage.getItem(e);case\"cookie\":return getCookie(e);default:return null}}function getCookie(t){const c=(\"; \"+window.document.cookie).split(\"; \"+t+\"=\");if(c.length===2)return c.pop()?.split(\";\").shift()}";
 
-const _q7c8JvHjfjRAI3ftlkDekwdvRWb4MdzwszJZ3aIh6M = (function(nitro) {
+const _lqVqDh2PqGYevd6yVOWfLyrHURXUFCCObBBYalhEQ = (function(nitro) {
   nitro.hooks.hook("render:html", (htmlContext) => {
     htmlContext.head.push(`<script>${script}<\/script>`);
   });
 });
 
 const plugins = [
-  _q7c8JvHjfjRAI3ftlkDekwdvRWb4MdzwszJZ3aIh6M
+  _lqVqDh2PqGYevd6yVOWfLyrHURXUFCCObBBYalhEQ
 ];
 
 const assets = {
-  "/_nuxt/BKZX93DC.js": {
+  "/_nuxt/49T-5qxM.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"916-GHoVOW+XqHhci/UEVYLfL3l1xQ0\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 2326,
-    "path": "../public/_nuxt/BKZX93DC.js"
+    "etag": "\"4ce7-aPQvIprDrkQEhgZYkRseZ/C/BhY\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 19687,
+    "path": "../public/_nuxt/49T-5qxM.js"
   },
-  "/_nuxt/Bsj20_j_.js": {
+  "/_nuxt/B07jDM8n.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"491e-b/sZtxvHGa/0oDoR3g1EGW1e3IA\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 18718,
-    "path": "../public/_nuxt/Bsj20_j_.js"
-  },
-  "/_nuxt/BxpSQd02.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"e58c-2zmMeNIrDv11ea3XKm9/MBrmueg\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 58764,
-    "path": "../public/_nuxt/BxpSQd02.js"
-  },
-  "/_nuxt/CZINpjSl.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"d2a-RUaJCuib/c+ycYH+s+n16id4AkI\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
+    "etag": "\"d2a-jLt0hSIi8Tz1FxMRmJrkoIv3eOI\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
     "size": 3370,
-    "path": "../public/_nuxt/CZINpjSl.js"
+    "path": "../public/_nuxt/B07jDM8n.js"
   },
-  "/_nuxt/CmTe7aAM.js": {
+  "/_nuxt/B0SnGh5X.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"e97-wCSb2k0hqD6jV0LSLPihVOi3voo\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
+    "etag": "\"d05-5LT27Vbmgq6V5r8SwVoKF9zDsgc\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 3333,
+    "path": "../public/_nuxt/B0SnGh5X.js"
+  },
+  "/_nuxt/BD8j8xeh.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"6633-dAXSrfU2wepmbS7Sg5lmRSAxk5E\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 26163,
+    "path": "../public/_nuxt/BD8j8xeh.js"
+  },
+  "/_nuxt/CMIPbF1H.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"18cd-Lqp1yu4JrVhJtBTo+jkCa1RzkV4\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 6349,
+    "path": "../public/_nuxt/CMIPbF1H.js"
+  },
+  "/_nuxt/D0q0kpom.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1f66-N964+unq8KIeaB0h2ZvJy4LveV8\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 8038,
+    "path": "../public/_nuxt/D0q0kpom.js"
+  },
+  "/_nuxt/B_hoskuW.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"444b2-sFA2dwG7Lqz2QGiiBLKRrrUO69M\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 279730,
+    "path": "../public/_nuxt/B_hoskuW.js"
+  },
+  "/_nuxt/C3O-ecL8.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"966e-DIWkfvCc0D8vOiW7F6Mn6PQIvMM\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 38510,
+    "path": "../public/_nuxt/C3O-ecL8.js"
+  },
+  "/_nuxt/DmiVJ-z1.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"e97-TOyFWHKEbvdO7yQUXcLMfqYR81I\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
     "size": 3735,
-    "path": "../public/_nuxt/CmTe7aAM.js"
+    "path": "../public/_nuxt/DmiVJ-z1.js"
   },
-  "/_nuxt/D5-R8jc2.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"42c0e-lkOdjuskDGPkwtMcpJ583PU+AB8\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 273422,
-    "path": "../public/_nuxt/D5-R8jc2.js"
-  },
-  "/_nuxt/DZ_SRDU_.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"75c-s3KEId8pQgJRwquyYvSsYv9SP2s\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 1884,
-    "path": "../public/_nuxt/DZ_SRDU_.js"
-  },
-  "/_nuxt/FF7n7XtM.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"1647-rD3h8wg7eRO/sFRr9/uarv4uNqc\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 5703,
-    "path": "../public/_nuxt/FF7n7XtM.js"
-  },
-  "/_nuxt/audit.DlhcW_HS.css": {
+  "/_nuxt/audit.BfC7cgW1.css": {
     "type": "text/css; charset=utf-8",
-    "etag": "\"52d-TohkUXY/FelgIVjA/hxTMT2/Ac4\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 1325,
-    "path": "../public/_nuxt/audit.DlhcW_HS.css"
+    "etag": "\"501-KdMvsV3V5+07KYQv90pl8YhoUCM\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 1281,
+    "path": "../public/_nuxt/audit.BfC7cgW1.css"
   },
-  "/_nuxt/default.BhB2q3WR.css": {
-    "type": "text/css; charset=utf-8",
-    "etag": "\"818-gYRVmk9ULBnVZMERZj+OoOQTbXs\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 2072,
-    "path": "../public/_nuxt/default.BhB2q3WR.css"
-  },
-  "/_nuxt/devices.BkWmo4Wy.css": {
-    "type": "text/css; charset=utf-8",
-    "etag": "\"6c5-9qn+jfq/oowO9Dp2RjTR2L/bVTo\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 1733,
-    "path": "../public/_nuxt/devices.BkWmo4Wy.css"
-  },
-  "/_nuxt/UEmXJnl7.js": {
+  "/_nuxt/NpvqbLAl.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"6e53-MjxmqWpeD/daU941jLiuTWTaV6M\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 28243,
-    "path": "../public/_nuxt/UEmXJnl7.js"
+    "etag": "\"1cef-i9CZLPahrmSGeEZyJaorHyWqXwM\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 7407,
+    "path": "../public/_nuxt/NpvqbLAl.js"
+  },
+  "/_nuxt/CuToEdLA.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"5b7d-D9qgJCxPrEbbO9od8LqcBC85M5U\"",
+    "mtime": "2026-09-29T10:04:11.228Z",
+    "size": 23421,
+    "path": "../public/_nuxt/CuToEdLA.js"
+  },
+  "/_nuxt/default.D5VIrU_l.css": {
+    "type": "text/css; charset=utf-8",
+    "etag": "\"848-wYwDah3xpktNE+uNYjPD+v9HnN0\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 2120,
+    "path": "../public/_nuxt/default.D5VIrU_l.css"
   },
   "/_nuxt/error-404.DL_4WIao.css": {
     "type": "text/css; charset=utf-8",
     "etag": "\"dca-KnjyV0UbpsrliiJzZx69defY74k\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
+    "mtime": "2026-09-29T10:04:11.228Z",
     "size": 3530,
     "path": "../public/_nuxt/error-404.DL_4WIao.css"
+  },
+  "/_nuxt/devices.4sZTtI5R.css": {
+    "type": "text/css; charset=utf-8",
+    "etag": "\"97a-Q/dLrxiTxr1Tz5TOAAaqkC+6d20\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 2426,
+    "path": "../public/_nuxt/devices.4sZTtI5R.css"
   },
   "/_nuxt/error-500.I1Dtv2V5.css": {
     "type": "text/css; charset=utf-8",
     "etag": "\"75a-vEGyJqldBVJrnMfcLsrGaHcxYl0\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
+    "mtime": "2026-09-29T10:04:11.228Z",
     "size": 1882,
     "path": "../public/_nuxt/error-500.I1Dtv2V5.css"
   },
-  "/_nuxt/index.qZEf_Jrx.css": {
+  "/_nuxt/index.HwduWZDU.css": {
     "type": "text/css; charset=utf-8",
-    "etag": "\"683-70e7l+49FQyl06OXE97ViM++WnU\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 1667,
-    "path": "../public/_nuxt/index.qZEf_Jrx.css"
+    "etag": "\"5eb-05Z7A3RL6amolCvdjkA6biVPfSw\"",
+    "mtime": "2026-09-29T10:04:11.227Z",
+    "size": 1515,
+    "path": "../public/_nuxt/index.HwduWZDU.css"
   },
-  "/_nuxt/permits.DBavPBho.css": {
+  "/_nuxt/n4DMlbqo.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"164c-zm63da58KQRvyAg+kw7BDHivu8o\"",
+    "mtime": "2026-09-29T10:04:11.228Z",
+    "size": 5708,
+    "path": "../public/_nuxt/n4DMlbqo.js"
+  },
+  "/_nuxt/permits.BnidUF0t.css": {
     "type": "text/css; charset=utf-8",
-    "etag": "\"1a70-/+YDto49bKnHthLwsCEreZh8V5A\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 6768,
-    "path": "../public/_nuxt/permits.DBavPBho.css"
+    "etag": "\"1e84-iTc5ZcTIcEHM7dQ/sGBK1sAKtcs\"",
+    "mtime": "2026-09-29T10:04:11.228Z",
+    "size": 7812,
+    "path": "../public/_nuxt/permits.BnidUF0t.css"
+  },
+  "/_nuxt/tTCfSjzy.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1e1f-XkAWYNJt/OG3Tc2ZZnIhinCeUOg\"",
+    "mtime": "2026-09-29T10:04:11.228Z",
+    "size": 7711,
+    "path": "../public/_nuxt/tTCfSjzy.js"
+  },
+  "/_nuxt/wFQLzrJ1.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"89e-v6UlEt5nVHLHUDjvNivXRBBIm7g\"",
+    "mtime": "2026-09-29T10:04:11.228Z",
+    "size": 2206,
+    "path": "../public/_nuxt/wFQLzrJ1.js"
+  },
+  "/_nuxt/builds/meta/03f5b486-b83a-4b03-9cec-27d19d7b3dc4.json": {
+    "type": "application/json",
+    "etag": "\"58-8QFpYMTOVwYmExTlyqeYi5EHDTA\"",
+    "mtime": "2026-09-29T10:04:11.216Z",
+    "size": 88,
+    "path": "../public/_nuxt/builds/meta/03f5b486-b83a-4b03-9cec-27d19d7b3dc4.json"
   },
   "/_nuxt/builds/latest.json": {
     "type": "application/json",
-    "etag": "\"47-G7lRnkrE7xhu2/Cwf6mA+m9w+Ns\"",
-    "mtime": "2026-09-28T16:56:11.555Z",
+    "etag": "\"47-f5REeB/+er3wS/JCvZVyJ/lW/1w\"",
+    "mtime": "2026-09-29T10:04:11.219Z",
     "size": 71,
     "path": "../public/_nuxt/builds/latest.json"
-  },
-  "/_nuxt/builds/meta/39efcce8-b443-49dc-aba5-a6f8ce6e2a42.json": {
-    "type": "application/json",
-    "etag": "\"58-k3apnv++Q37Pqh5f1Ov8muoyUdM\"",
-    "mtime": "2026-09-28T16:56:11.551Z",
-    "size": 88,
-    "path": "../public/_nuxt/builds/meta/39efcce8-b443-49dc-aba5-a6f8ce6e2a42.json"
-  },
-  "/_nuxt/Dy0GnUmN.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"18cd-XYTYvcX4pu3J2LuTEVXBHR/pktM\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 6349,
-    "path": "../public/_nuxt/Dy0GnUmN.js"
-  },
-  "/_nuxt/DnjZ1tOG.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"e30-xipZJjHOsdm+fyJbA9wgjWQvoZY\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 3632,
-    "path": "../public/_nuxt/DnjZ1tOG.js"
-  },
-  "/_nuxt/CwoMDRT9.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"1f66-JUDtBlkd9nM44McyxGarLblR2TE\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 8038,
-    "path": "../public/_nuxt/CwoMDRT9.js"
-  },
-  "/_nuxt/VrCV8vyJ.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"1e1f-y8yz23OmLUcPlJUE5IHGNLSK104\"",
-    "mtime": "2026-09-28T16:56:11.561Z",
-    "size": 7711,
-    "path": "../public/_nuxt/VrCV8vyJ.js"
   }
 };
 
@@ -5175,7 +5232,7 @@ function getAsset (id) {
 
 const METHODS = /* @__PURE__ */ new Set(["HEAD", "GET"]);
 const EncodingMap = { gzip: ".gz", br: ".br" };
-const _j0L_yP = eventHandler((event) => {
+const _Gi8Q7D = eventHandler((event) => {
   if (event.method && !METHODS.has(event.method)) {
     return;
   }
@@ -5296,12 +5353,400 @@ function publicAssetsURL(...path) {
 	return path.length ? joinRelativeURL(publicBase, ...path) : publicBase;
 }
 
+var _a;
+const now = () => /* @__PURE__ */ new Date();
+const today = (h, m = 0) => {
+  const d = new Date(Date.UTC(2026, 8, 29, h - 8, m));
+  return d.toISOString();
+};
+const tomorrow = (h, m = 0) => new Date(Date.UTC(2026, 8, 30, h - 8, m)).toISOString();
+const clock = () => now().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+let seq = 100;
+const nextId = (prefix) => `${prefix}-${++seq}`;
+function snapshotHistory(permit, action, detail, actor) {
+  return {
+    id: nextId("HS"),
+    time: clock(),
+    action,
+    detail,
+    actor,
+    revision: permit.revision,
+    steps: structuredClone(permit.steps),
+    isolationPoints: structuredClone(permit.isolationPoints)
+  };
+}
+function seed() {
+  const p018 = {
+    id: "WP-260929-018",
+    title: "3 \u53F7\u98CE\u673A\u9F7F\u8F6E\u7BB1\u66F4\u6362",
+    device: "WTG-03 \xB7 \u7BB1\u53D8 03",
+    crew: "\u673A\u52A1\u4E8C\u73ED",
+    owner: "\u674E\u9A81",
+    window: "09-29 14:00 \u2014 22:00",
+    startAt: today(14),
+    endAt: today(22),
+    status: "\u6267\u884C\u4E2D",
+    risk: "\u4E00\u7EA7",
+    revision: 4,
+    reviewRequired: false,
+    blockedByConflict: false,
+    requestedPointIds: ["IP-301", "IP-302", "IP-303"],
+    isolationPoints: [
+      { id: "IP-301", device: "WTG-03", label: "\u5854\u57FA 690V \u4E3B\u5F00\u5173", type: "\u5F00\u5173", state: "\u5DF2\u9694\u79BB", boundaryRevision: 1, confirmedBy: "WP-260929-018" },
+      { id: "IP-302", device: "BOX-03", label: "\u7BB1\u53D8\u4F4E\u538B\u4FA7\u5200\u95F8", type: "\u5200\u95F8", state: "\u5DF2\u9694\u79BB", boundaryRevision: 1, confirmedBy: "WP-260929-018" },
+      { id: "IP-303", device: "WTG-03", label: "\u53F6\u8F6E\u673A\u68B0\u9501", type: "\u9600\u95E8", state: "\u5DF2\u9694\u79BB", boundaryRevision: 1, confirmedBy: "WP-260929-018" }
+    ],
+    steps: [
+      { id: "ST-01", text: "\u6838\u5BF9\u5DE5\u4F5C\u7968\u3001\u8BBE\u5907\u53CC\u91CD\u7F16\u53F7\u4E0E\u73B0\u573A\u6807\u8BC6", done: true, owner: "\u5468\u91CE", evidence: "\u73B0\u573A\u7167\u7247 2 \u5F20", boundaryRevision: 1 },
+      { id: "ST-02", text: "\u65AD\u5F00 690V \u4E3B\u5F00\u5173\u5E76\u6267\u884C\u673A\u68B0\u9501\u5B9A", done: true, owner: "\u5468\u91CE", evidence: "\u9501\u5177\u7F16\u53F7 LK-2107", boundaryRevision: 1 },
+      { id: "ST-03", text: "\u9A8C\u7535\u3001\u653E\u7535\u5E76\u88C5\u8BBE\u63A5\u5730\u7EBF", done: false, owner: "\u4F55\u5C9A" },
+      { id: "ST-04", text: "\u5168\u4F53\u4F5C\u4E1A\u4EBA\u5458\u786E\u8BA4\u9694\u79BB\u8FB9\u754C", done: false, owner: "\u674E\u9A81" }
+    ],
+    history: []
+  };
+  const p021 = {
+    id: "WP-260929-021",
+    title: "2 \u53F7\u96C6\u7535\u7EBF\u8DEF\u7EDD\u7F18\u5B50\u66F4\u6362",
+    device: "LINE-A2 \xB7 \u6746\u5854 17\u201323",
+    crew: "\u7EBF\u8DEF\u4E00\u73ED",
+    owner: "\u4F55\u5C9A",
+    window: "09-29 18:00 \u2014 30 02:00",
+    startAt: today(18),
+    endAt: today(26),
+    status: "\u5F85\u590D\u6838",
+    risk: "\u4E00\u7EA7",
+    revision: 2,
+    reviewRequired: true,
+    blockedByConflict: false,
+    requestedPointIds: ["IP-411", "IP-412", "IP-413"],
+    isolationPoints: [
+      { id: "IP-411", device: "LINE-A2", label: "A2 \u8FDB\u7EBF\u65AD\u8DEF\u5668", type: "\u5F00\u5173", state: "\u5F85\u64CD\u4F5C", boundaryRevision: 2 },
+      { id: "IP-412", device: "LINE-A2", label: "17 \u53F7\u6746\u63A5\u5730\u5200\u95F8", type: "\u63A5\u5730", state: "\u5F85\u64CD\u4F5C", boundaryRevision: 1 },
+      { id: "IP-413", device: "BUS-A", label: "\u6BCD\u7EBF\u4FA7\u9694\u79BB\u5200\u95F8", type: "\u5200\u95F8", state: "\u5DF2\u9694\u79BB", boundaryRevision: 1, confirmedBy: "WP-260929-021" }
+    ],
+    steps: [
+      { id: "ST-11", text: "\u6838\u5BF9\u7EBF\u8DEF\u53CC\u91CD\u540D\u79F0\u4E0E\u505C\u7535\u8303\u56F4", done: true, owner: "\u4F55\u5C9A", boundaryRevision: 1 },
+      { id: "ST-12", text: "\u65AD\u5F00 A2 \u8FDB\u7EBF\u5E76\u5B8C\u6210\u4E94\u9632\u6821\u9A8C", done: false, owner: "\u5B59\u79BE" },
+      { id: "ST-13", text: "17\u300123 \u53F7\u6746\u9A8C\u7535\u5E76\u88C5\u8BBE\u63A5\u5730\u7EBF", done: false, owner: "\u8C2D\u52C7" }
+    ],
+    history: []
+  };
+  const p004 = {
+    id: "WP-260930-004",
+    title: "\u7BB1\u53D8 12 \u6E29\u63A7\u5668\u66F4\u6362",
+    device: "BOX-12",
+    crew: "\u7535\u6C14\u4E00\u73ED",
+    owner: "\u5B59\u79BE",
+    window: "09-30 08:00 \u2014 12:00",
+    startAt: tomorrow(8),
+    endAt: tomorrow(12),
+    status: "\u5F85\u6267\u884C",
+    risk: "\u4E8C\u7EA7",
+    revision: 1,
+    reviewRequired: false,
+    blockedByConflict: false,
+    requestedPointIds: ["IP-501"],
+    isolationPoints: [
+      { id: "IP-501", device: "BOX-12", label: "\u9AD8\u538B\u8D1F\u8377\u5F00\u5173", type: "\u5F00\u5173", state: "\u5F85\u64CD\u4F5C", boundaryRevision: 1 }
+    ],
+    steps: [
+      { id: "ST-21", text: "\u6838\u5BF9\u7BB1\u53D8\u7F16\u53F7\u548C\u4F4E\u538B\u4FA7\u8D1F\u8377\u8F6C\u79FB", done: true, owner: "\u5B59\u79BE", boundaryRevision: 1 },
+      { id: "ST-22", text: "\u65AD\u5F00\u9AD8\u538B\u8D1F\u8377\u5F00\u5173\u5E76\u9501\u5B9A", done: false, owner: "\u5B59\u79BE" }
+    ],
+    history: []
+  };
+  const permits = [p018, p021, p004];
+  for (const permit of permits) permit.history.push(snapshotHistory(permit, "\u521D\u59CB\u7248\u672C", `\u8BB8\u53EF\u521B\u5EFA\uFF0C\u4FEE\u8BA2 r${permit.revision}`, permit.owner));
+  const isolationPoints = [
+    ...structuredClone(p018.isolationPoints),
+    ...structuredClone(p021.isolationPoints),
+    ...structuredClone(p004.isolationPoints)
+  ];
+  const audit = [
+    { id: "AE-901", time: "16:42:05", actor: "\u674E\u9A81", action: "\u5B8C\u6210\u6B65\u9AA4", target: "WP-260929-018 / ST-02", detail: "\u4E0A\u4F20\u673A\u68B0\u9501\u5177\u7F16\u53F7 LK-2107", permitId: "WP-260929-018" },
+    { id: "AE-902", time: "16:18:30", actor: "\u7CFB\u7EDF", action: "\u51B2\u7A81\u9884\u8B66", target: "LINE-A2", detail: "\u68C0\u6D4B\u5230\u7EBF\u8DEF\u4E00\u73ED\u4E0E\u7535\u6C14\u4E8C\u73ED\u5728 18:00\u201320:00 \u91CD\u53E0\u4F5C\u4E1A" },
+    { id: "AE-903", time: "15:56:12", actor: "\u8D75\u6E05", action: "\u590D\u6838\u901A\u8FC7", target: "WP-260929-014", detail: "\u540C\u610F\u6267\u884C\uFF0C\u8981\u6C42\u6BCF 2 \u5C0F\u65F6\u56DE\u62A5\u98CE\u901F" }
+  ];
+  return {
+    permits,
+    isolationPoints,
+    conflicts: [],
+    audit,
+    revision: 12,
+    latestAlert: "18:00\u201320:00 LINE-A2 \u5B58\u5728\u8DE8\u73ED\u7EC4\u91CD\u53E0\u4F5C\u4E1A",
+    processedRequests: /* @__PURE__ */ new Map()
+  };
+}
+const globalRef = globalThis;
+const state = (_a = globalRef.__windFarmOpsStore) != null ? _a : seed();
+globalRef.__windFarmOpsStore = state;
+function addAudit(actor, action, target, detail, permitId, clientRequestId) {
+  const event = { id: nextId("AE"), time: clock(), actor, action, target, detail, permitId, clientRequestId };
+  state.audit.unshift(event);
+  return event;
+}
+function bump() {
+  state.revision += 1;
+}
+function overlaps(aStart, aEnd, bStart, bEnd) {
+  return new Date(aStart) < new Date(bEnd) && new Date(bStart) < new Date(aEnd);
+}
+function isActiveHolder(permit) {
+  return !["\u5DF2\u9A73\u56DE", "\u5DF2\u5B8C\u6210", "\u5F85\u590D\u6838"].includes(permit.status);
+}
+function detectConflicts(incoming) {
+  var _a2;
+  const devices = new Set(incoming.isolationPoints.map((point) => point.device));
+  const found = [];
+  for (const holder of state.permits) {
+    if (holder.id === incoming.id || holder.crew === incoming.crew || !isActiveHolder(holder)) continue;
+    if (!overlaps(incoming.startAt, incoming.endAt, holder.startAt, holder.endAt)) continue;
+    const sharedPoint = (_a2 = holder.isolationPoints.find((point) => devices.has(point.device))) != null ? _a2 : state.isolationPoints.find((point) => devices.has(point.device) && holder.requestedPointIds.includes(point.id));
+    if (!sharedPoint) continue;
+    const exists = state.conflicts.some(
+      (conflict) => conflict.status === "\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406" && conflict.incomingPermitId === incoming.id && conflict.holderPermitId === holder.id && conflict.device === sharedPoint.device
+    );
+    if (exists) continue;
+    found.push({
+      id: nextId("CF"),
+      device: sharedPoint.device,
+      pointId: sharedPoint.id,
+      pointLabel: sharedPoint.label,
+      holderPermitId: holder.id,
+      holderCrew: holder.crew,
+      incomingPermitId: incoming.id,
+      incomingCrew: incoming.crew,
+      window: incoming.window,
+      status: "\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406",
+      createdAt: clock()
+    });
+  }
+  return found;
+}
+function getState() {
+  return {
+    site: "\u6D77\u5DDE\u6E7E H2 \u98CE\u7535\u573A",
+    generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    onlineDevices: 30,
+    totalDevices: 32,
+    windSpeed: 10.8,
+    revision: state.revision,
+    permits: state.permits,
+    isolationPoints: state.isolationPoints,
+    conflicts: state.conflicts,
+    audit: state.audit,
+    latestAlert: state.latestAlert
+  };
+}
+function createPermit(input) {
+  const id = `WP-${(/* @__PURE__ */ new Date()).toISOString().slice(2, 10).replaceAll("-", "")}-${String(state.permits.length + 31).padStart(3, "0")}`;
+  const pointId = nextId("IP");
+  const permit = {
+    id,
+    ...input,
+    status: "\u5F85\u590D\u6838",
+    risk: input.risk,
+    revision: 1,
+    reviewRequired: false,
+    blockedByConflict: false,
+    requestedPointIds: [pointId],
+    isolationPoints: [{ id: pointId, device: input.device, label: "\u4E3B\u9694\u79BB\u70B9", type: "\u5F00\u5173", state: "\u5F85\u64CD\u4F5C", boundaryRevision: 1 }],
+    steps: [
+      { id: "ST-31", text: "\u6838\u5BF9\u8BBE\u5907\u53CC\u91CD\u7F16\u53F7\u4E0E\u5DE5\u4F5C\u8303\u56F4", done: false, owner: input.owner },
+      { id: "ST-32", text: "\u5B8C\u6210\u9694\u79BB\u3001\u9501\u5B9A\u3001\u9A8C\u7535\u548C\u63A5\u5730", done: false, owner: input.owner }
+    ],
+    history: []
+  };
+  state.permits.unshift(permit);
+  const conflicts = detectConflicts(permit);
+  if (conflicts.length) {
+    state.conflicts.unshift(...conflicts);
+    permit.blockedByConflict = true;
+    permit.reviewRequired = true;
+    state.latestAlert = `${permit.crew} \u7684 ${permit.id} \u4E0E\u65E2\u6709\u8BB8\u53EF\u5728 ${conflicts.map((c) => c.device).join("\u3001")} \u65F6\u6BB5\u91CD\u53E0\uFF0C\u7B49\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406`;
+    addAudit(permit.owner, "\u63D0\u4EA4\u8BB8\u53EF-\u51B2\u7A81\u51BB\u7ED3", permit.id, state.latestAlert, permit.id);
+    for (const conflict of conflicts) {
+      addAudit("\u7CFB\u7EDF", "\u767B\u8BB0\u8DE8\u73ED\u7EC4\u51B2\u7A81", conflict.id, `${conflict.incomingCrew} \u7533\u8BF7\u5360\u7528 ${conflict.device}\uFF08${conflict.pointLabel}\uFF09\uFF0C\u4E0E ${conflict.holderCrew} ${conflict.holderPermitId} \u65F6\u95F4\u7A97\u91CD\u53E0`, permit.id);
+    }
+  } else {
+    addAudit(permit.owner, "\u65B0\u5EFA\u8BB8\u53EF", permit.id, permit.title, permit.id);
+  }
+  permit.history.push(snapshotHistory(permit, "\u8BB8\u53EF\u63D0\u4EA4", conflicts.length ? "\u63D0\u4EA4\u65F6\u547D\u4E2D\u8DE8\u73ED\u7EC4\u51B2\u7A81\uFF0C\u51BB\u7ED3\u7B49\u5F85\u5904\u7406" : "\u63D0\u4EA4\u590D\u6838\uFF0C\u65E0\u51B2\u7A81", permit.owner));
+  bump();
+  return { permit, conflicts };
+}
+const FLOW = {
+  \u5F85\u590D\u6838: "\u5F85\u6267\u884C",
+  \u5F85\u6267\u884C: "\u6267\u884C\u4E2D",
+  \u6267\u884C\u4E2D: "\u5F85\u7ED3\u675F",
+  \u5F85\u7ED3\u675F: "\u5F85\u5173\u95ED",
+  \u5F85\u5173\u95ED: "\u5DF2\u5B8C\u6210",
+  \u5DF2\u5B8C\u6210: void 0,
+  \u5DF2\u9A73\u56DE: void 0
+};
+function advancePermit(id, actor = "\u5F53\u524D\u7528\u6237", clientRequestId) {
+  if (clientRequestId && state.processedRequests.has(clientRequestId)) {
+    return { ok: true, duplicated: true, duplicatedAuditId: state.processedRequests.get(clientRequestId), permit: state.permits.find((p) => p.id === id) };
+  }
+  const permit = state.permits.find((item) => item.id === id);
+  if (!permit) return { ok: false, error: "\u8BB8\u53EF\u4E0D\u5B58\u5728" };
+  if (permit.blockedByConflict) return { ok: false, error: "\u5B58\u5728\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406\u7684\u8DE8\u73ED\u7EC4\u51B2\u7A81\uFF0C\u6682\u4E0D\u80FD\u63A8\u8FDB" };
+  if (permit.reviewRequired) return { ok: false, error: "\u9694\u79BB\u8FB9\u754C\u5DF2\u8C03\u6574\uFF0C\u9700\u8981\u503C\u73ED\u8D1F\u8D23\u4EBA\u91CD\u65B0\u590D\u6838" };
+  const next = FLOW[permit.status];
+  if (!next) return { ok: false, error: "\u5F53\u524D\u72B6\u6001\u4E0D\u53EF\u63A8\u8FDB" };
+  const previous = permit.status;
+  permit.status = next;
+  permit.revision += 1;
+  permit.history.push(snapshotHistory(permit, "\u6D41\u7A0B\u63A8\u8FDB", `\u72B6\u6001\u7531\u201C${previous}\u201D\u53D8\u66F4\u4E3A\u201C${next}\u201D`, actor));
+  const event = addAudit(actor, "\u6D41\u7A0B\u63A8\u8FDB", permit.id, `\u72B6\u6001\u7531\u201C${previous}\u201D\u53D8\u66F4\u4E3A\u201C${next}\u201D${clientRequestId ? "\uFF08\u65AD\u7EBF\u8865\u4F20\uFF09" : ""}`, permit.id, clientRequestId);
+  if (clientRequestId) state.processedRequests.set(clientRequestId, event.id);
+  bump();
+  return { ok: true, duplicated: false, permit };
+}
+function toggleStep(id, stepId, actor = "\u5F53\u524D\u7528\u6237", clientRequestId) {
+  if (clientRequestId && state.processedRequests.has(clientRequestId)) {
+    const duplicatedAuditId = state.processedRequests.get(clientRequestId);
+    return { ok: true, duplicated: true, duplicatedAuditId, permit: state.permits.find((p) => p.id === id) };
+  }
+  const permit = state.permits.find((item) => item.id === id);
+  const step = permit == null ? void 0 : permit.steps.find((item) => item.id === stepId);
+  if (!permit || !step) return { ok: false, error: "\u6B65\u9AA4\u4E0D\u5B58\u5728" };
+  const willComplete = !step.done;
+  step.done = willComplete;
+  if (willComplete) step.boundaryRevision = Math.max(1, ...permit.isolationPoints.map((point) => point.boundaryRevision));
+  permit.revision += 1;
+  permit.history.push(snapshotHistory(permit, willComplete ? "\u5B8C\u6210\u6B65\u9AA4" : "\u64A4\u9500\u6B65\u9AA4", `${step.id} ${step.text}`, actor));
+  const event = addAudit(
+    actor,
+    willComplete ? "\u5B8C\u6210\u6B65\u9AA4" : "\u64A4\u9500\u6B65\u9AA4",
+    `${permit.id} / ${step.id}`,
+    `${step.text}${clientRequestId ? "\uFF08\u65AD\u7EBF\u8865\u4F20\uFF09" : ""}`,
+    permit.id,
+    clientRequestId
+  );
+  if (clientRequestId) state.processedRequests.set(clientRequestId, event.id);
+  bump();
+  return { ok: true, duplicated: false, permit };
+}
+function adjustBoundary(input) {
+  var _a2;
+  const actor = (_a2 = input.actor) != null ? _a2 : "\u503C\u73ED\u8D1F\u8D23\u4EBA";
+  const point = state.isolationPoints.find((item) => item.id === input.pointId);
+  if (!point) return { ok: false, error: "\u9694\u79BB\u70B9\u4E0D\u5B58\u5728" };
+  const before = `${point.device} / ${point.label}\uFF08\u8FB9\u754C r${point.boundaryRevision}\uFF09`;
+  if (input.device) point.device = input.device;
+  if (input.label) point.label = input.label;
+  point.boundaryRevision += 1;
+  point.state = "\u5F85\u64CD\u4F5C";
+  point.confirmedBy = void 0;
+  const affected = [];
+  for (const permit of state.permits) {
+    const linked = permit.isolationPoints.find((item) => item.id === point.id);
+    if (!linked) continue;
+    linked.device = point.device;
+    linked.label = point.label;
+    linked.boundaryRevision = point.boundaryRevision;
+    linked.state = "\u5F85\u64CD\u4F5C";
+    linked.confirmedBy = void 0;
+    const confirmed = permit.status === "\u6267\u884C\u4E2D" || permit.status === "\u5F85\u7ED3\u675F" || permit.status === "\u5F85\u5173\u95ED" || permit.steps.some((step) => step.done);
+    if (confirmed) {
+      const reason = `\u9694\u79BB\u70B9 ${point.id} \u8FB9\u754C\u7531 r${point.boundaryRevision - 1} \u8C03\u6574\u4E3A r${point.boundaryRevision}\uFF0C\u65E7\u9694\u79BB\u786E\u8BA4\u5931\u6548\uFF0C\u9700\u91CD\u65B0\u590D\u6838`;
+      permit.reviewRequired = true;
+      applyReReview(permit, reason, actor);
+      affected.push(permit);
+    } else {
+      permit.revision += 1;
+      permit.history.push(snapshotHistory(permit, "\u8FB9\u754C\u8C03\u6574", `\u9694\u79BB\u70B9 ${point.id} \u66F4\u65B0\u4E3A r${point.boundaryRevision}\uFF0C\u5C1A\u672A\u9694\u79BB\u786E\u8BA4\uFF0C\u540C\u6B65\u6700\u65B0\u8FB9\u754C`, actor));
+    }
+  }
+  addAudit(actor, "\u8C03\u6574\u9694\u79BB\u8FB9\u754C", point.id, `${before} \u2192 ${point.device} / ${point.label}\uFF08\u8FB9\u754C r${point.boundaryRevision}\uFF09\uFF1B\u89E6\u53D1 ${affected.length} \u5F20\u5DF2\u786E\u8BA4\u8BB8\u53EF\u91CD\u65B0\u590D\u6838`);
+  state.latestAlert = `\u9694\u79BB\u70B9 ${point.id} \u8FB9\u754C\u8C03\u6574\u4E3A r${point.boundaryRevision}\uFF0C${affected.length} \u5F20\u65E7\u8BB8\u53EF\u9700\u8981\u503C\u73ED\u8D1F\u8D23\u4EBA\u91CD\u65B0\u590D\u6838`;
+  bump();
+  return { ok: true, point, affected };
+}
+function applyReReview(permit, reason, actor, point) {
+  const previousStatus = permit.status;
+  permit.revision += 1;
+  permit.reReviewReason = reason;
+  permit.reviewRequired = true;
+  if (!["\u5F85\u590D\u6838"].includes(permit.status)) permit.status = "\u5F85\u590D\u6838";
+  permit.history.push(snapshotHistory(permit, "\u89E6\u53D1\u91CD\u65B0\u590D\u6838", `${reason}\uFF1B\u539F\u72B6\u6001\u201C${previousStatus}\u201D\uFF0C\u539F\u6B65\u9AA4\u4E0E\u8BC1\u636E\u4FDD\u7559\u53EF\u67E5`, actor));
+  addAudit("\u7CFB\u7EDF", "\u65E7\u8BB8\u53EF\u91CD\u65B0\u590D\u6838", permit.id, reason, permit.id);
+}
+function confirmIsolation(permitId, pointId, actor = "\u5F53\u524D\u7528\u6237", clientRequestId) {
+  if (clientRequestId && state.processedRequests.has(clientRequestId)) {
+    return { ok: true, duplicated: true, duplicatedAuditId: state.processedRequests.get(clientRequestId) };
+  }
+  const permit = state.permits.find((item) => item.id === permitId);
+  const point = permit == null ? void 0 : permit.isolationPoints.find((item) => item.id === pointId);
+  if (!permit || !point) return { ok: false, error: "\u9694\u79BB\u70B9\u4E0D\u5B58\u5728" };
+  point.state = "\u5DF2\u9694\u79BB";
+  point.confirmedBy = permit.id;
+  const ledgerPoint = state.isolationPoints.find((item) => item.id === pointId);
+  if (ledgerPoint) {
+    ledgerPoint.state = "\u5DF2\u9694\u79BB";
+    ledgerPoint.confirmedBy = permit.id;
+  }
+  permit.revision += 1;
+  permit.history.push(snapshotHistory(permit, "\u9694\u79BB\u786E\u8BA4", `${point.id} ${point.label} \u5DF2\u9694\u79BB\u5E76\u786E\u8BA4\uFF0C\u8FB9\u754C r${point.boundaryRevision}`, actor));
+  const event = addAudit(actor, "\u9694\u79BB\u786E\u8BA4", `${permit.id} / ${point.id}`, `${point.label} \u6309\u8FB9\u754C r${point.boundaryRevision} \u5B8C\u6210\u9694\u79BB${clientRequestId ? "\uFF08\u65AD\u7EBF\u8865\u4F20\uFF09" : ""}`, permit.id, clientRequestId);
+  if (clientRequestId) state.processedRequests.set(clientRequestId, event.id);
+  bump();
+  return { ok: true, duplicated: false, permit };
+}
+function resolveConflict(conflictId, resolution, actor = "\u503C\u73ED\u8D1F\u8D23\u4EBA", note = "") {
+  const conflict = state.conflicts.find((item) => item.id === conflictId);
+  if (!conflict) return { ok: false, error: "\u51B2\u7A81\u4E0D\u5B58\u5728" };
+  if (conflict.status !== "\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406") return { ok: false, error: "\u8BE5\u51B2\u7A81\u5DF2\u5904\u7406" };
+  const incoming = state.permits.find((item) => item.id === conflict.incomingPermitId);
+  conflict.status = resolution;
+  conflict.resolvedAt = clock();
+  conflict.resolvedBy = actor;
+  conflict.resolution = note;
+  if (incoming) {
+    incoming.revision += 1;
+    if (resolution === "\u5141\u8BB8\u7EE7\u7EED") {
+      incoming.blockedByConflict = false;
+      incoming.reviewRequired = false;
+      incoming.reReviewReason = void 0;
+      incoming.history.push(snapshotHistory(incoming, "\u51B2\u7A81\u5904\u7406-\u653E\u884C", `\u503C\u73ED\u8D1F\u8D23\u4EBA\u5141\u8BB8\u4E0E ${conflict.holderCrew} \u9519\u5CF0\u5360\u7528 ${conflict.device}\uFF1A${note || "\u6309\u4EA4\u63A5\u987A\u5E8F\u7EE7\u7EED"}`, actor));
+      addAudit(actor, "\u51B2\u7A81\u653E\u884C", conflict.id, `\u5141\u8BB8 ${incoming.crew} ${incoming.id} \u5728 ${conflict.device} \u7EE7\u7EED\u6D41\u8F6C`, incoming.id);
+    } else {
+      incoming.status = "\u5DF2\u9A73\u56DE";
+      incoming.history.push(snapshotHistory(incoming, "\u51B2\u7A81\u5904\u7406-\u9A73\u56DE", `\u503C\u73ED\u8D1F\u8D23\u4EBA\u9A73\u56DE\u91CD\u53E0\u65F6\u6BB5\u7533\u8BF7\uFF1A${note || "\u8C03\u6574\u65F6\u95F4\u7A97\u540E\u91CD\u65B0\u63D0\u4EA4"}`, actor));
+      addAudit(actor, "\u51B2\u7A81\u9A73\u56DE", conflict.id, `\u9A73\u56DE ${incoming.crew} ${incoming.id} \u5BF9 ${conflict.device} \u7684\u91CD\u53E0\u5360\u7528`, incoming.id);
+    }
+  }
+  const stillPending = state.conflicts.some((c) => c.incomingPermitId === conflict.incomingPermitId && c.status === "\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406");
+  if (incoming && resolution === "\u5141\u8BB8\u7EE7\u7EED" && stillPending) incoming.blockedByConflict = true;
+  if (!state.conflicts.some((c) => c.status === "\u5F85\u503C\u73ED\u8D1F\u8D23\u4EBA\u5904\u7406")) state.latestAlert = "";
+  bump();
+  return { ok: true, conflict };
+}
+function reReviewPermit(permitId, actor = "\u503C\u73ED\u8D1F\u8D23\u4EBA", note = "") {
+  const permit = state.permits.find((item) => item.id === permitId);
+  if (!permit) return { ok: false, error: "\u8BB8\u53EF\u4E0D\u5B58\u5728" };
+  if (!permit.reviewRequired) return { ok: false, error: "\u8BE5\u8BB8\u53EF\u65E0\u9700\u91CD\u65B0\u590D\u6838" };
+  permit.reviewRequired = false;
+  permit.reReviewReason = void 0;
+  permit.revision += 1;
+  permit.history.push(snapshotHistory(permit, "\u590D\u6838\u901A\u8FC7", `\u503C\u73ED\u8D1F\u8D23\u4EBA\u6309\u6700\u65B0\u9694\u79BB\u8FB9\u754C\u91CD\u65B0\u590D\u6838\u901A\u8FC7\uFF1A${note || "\u786E\u8BA4\u8FB9\u754C\u4E0E\u539F\u4F5C\u4E1A\u6B65\u9AA4\u4ECD\u6709\u6548"}; \u539F\u6B65\u9AA4\u8BC1\u636E\u4FDD\u7559`, actor));
+  addAudit(actor, "\u91CD\u65B0\u590D\u6838\u901A\u8FC7", permit.id, `\u8FB9\u754C r${Math.max(...permit.isolationPoints.map((p) => p.boundaryRevision))} \u590D\u6838\u901A\u8FC7\uFF0C\u539F ${permit.steps.filter((s) => s.done).length} \u4E2A\u5DF2\u5B8C\u6210\u6B65\u9AA4\u4FDD\u7559\u53EF\u67E5`, permit.id);
+  bump();
+  return { ok: true, permit };
+}
+function dismissAlert(actor = "\u503C\u73ED\u8D1F\u8D23\u4EBA") {
+  state.latestAlert = "";
+  addAudit(actor, "\u786E\u8BA4\u63D0\u9192", "\u5B9E\u65F6\u63D0\u9192", "\u503C\u73ED\u8D1F\u8D23\u4EBA\u5DF2\u77E5\u6089\u5E76\u534F\u8C03\u5F53\u524D\u63D0\u9192");
+  bump();
+}
+
 const collections = {
   'heroicons': () => import('../_/icons.mjs').then(m => m.default),
 };
 
 const DEFAULT_ENDPOINT = "https://api.iconify.design";
-const _jGIuti = defineCachedEventHandler(async (event) => {
+const _AxZNjH = defineCachedEventHandler(async (event) => {
   const url = getRequestURL(event);
   if (!url)
     return createError$1({ status: 400, message: "Invalid icon request" });
@@ -5353,16 +5798,32 @@ const _jGIuti = defineCachedEventHandler(async (event) => {
 
 const _SxA8c9 = defineEventHandler(() => {});
 
-const _lazy_TXaztK = () => import('../routes/api/operations.get.mjs');
-const _lazy_0xAmBp = () => import('../routes/renderer.mjs').then(function (n) { return n.r; });
+const _lazy_ifns_r = () => import('../routes/api/alerts/dismiss.post.mjs');
+const _lazy_fVgB5i = () => import('../routes/api/conflicts/resolve.post.mjs');
+const _lazy_gIh8mG = () => import('../routes/api/isolation/adjust.post.mjs');
+const _lazy_EU7B4U = () => import('../routes/api/isolation/confirm.post.mjs');
+const _lazy_VFHm3a = () => import('../routes/api/operations.get.mjs');
+const _lazy_eynr8g = () => import('../routes/api/permits.post.mjs');
+const _lazy_bCO5Ed = () => import('../routes/api/permits/advance.post.mjs');
+const _lazy_Uaq2tn = () => import('../routes/api/permits/rereview.post.mjs');
+const _lazy_uu7ZD4 = () => import('../routes/api/steps/toggle.post.mjs');
+const _lazy_j4Fjf4 = () => import('../routes/renderer.mjs').then(function (n) { return n.r; });
 
 const handlers = [
-  { route: '', handler: _j0L_yP, lazy: false, middleware: true, method: undefined },
-  { route: '/api/operations', handler: _lazy_TXaztK, lazy: true, middleware: false, method: "get" },
-  { route: '/__nuxt_error', handler: _lazy_0xAmBp, lazy: true, middleware: false, method: undefined },
-  { route: '/api/_nuxt_icon/:collection', handler: _jGIuti, lazy: false, middleware: false, method: undefined },
+  { route: '', handler: _Gi8Q7D, lazy: false, middleware: true, method: undefined },
+  { route: '/api/alerts/dismiss', handler: _lazy_ifns_r, lazy: true, middleware: false, method: "post" },
+  { route: '/api/conflicts/resolve', handler: _lazy_fVgB5i, lazy: true, middleware: false, method: "post" },
+  { route: '/api/isolation/adjust', handler: _lazy_gIh8mG, lazy: true, middleware: false, method: "post" },
+  { route: '/api/isolation/confirm', handler: _lazy_EU7B4U, lazy: true, middleware: false, method: "post" },
+  { route: '/api/operations', handler: _lazy_VFHm3a, lazy: true, middleware: false, method: "get" },
+  { route: '/api/permits', handler: _lazy_eynr8g, lazy: true, middleware: false, method: "post" },
+  { route: '/api/permits/advance', handler: _lazy_bCO5Ed, lazy: true, middleware: false, method: "post" },
+  { route: '/api/permits/rereview', handler: _lazy_Uaq2tn, lazy: true, middleware: false, method: "post" },
+  { route: '/api/steps/toggle', handler: _lazy_uu7ZD4, lazy: true, middleware: false, method: "post" },
+  { route: '/__nuxt_error', handler: _lazy_j4Fjf4, lazy: true, middleware: false, method: undefined },
+  { route: '/api/_nuxt_icon/:collection', handler: _AxZNjH, lazy: false, middleware: false, method: undefined },
   { route: '/__nuxt_island/**', handler: _SxA8c9, lazy: false, middleware: false, method: undefined },
-  { route: '/**', handler: _lazy_0xAmBp, lazy: true, middleware: false, method: undefined }
+  { route: '/**', handler: _lazy_j4Fjf4, lazy: true, middleware: false, method: undefined }
 ];
 
 function createNitroApp() {
@@ -5778,5 +6239,5 @@ trapUnhandledNodeErrors();
 setupGracefulShutdown(listener, nitroApp);
 const nodeServer = {};
 
-export { $fetch$1 as $, serialize$1 as A, isEqual as B, parseQuery as C, withTrailingSlash as D, withoutTrailingSlash as E, nodeServer as F, defineRenderHandler as a, buildAssetsURL as b, createError$1 as c, defineEventHandler as d, encodePath as e, getRouteRules as f, getQuery as g, getResponseStatusText as h, getResponseStatus as i, useNitroApp as j, defuFn as k, klona as l, parseURL as m, decodePath as n, defu as o, publicAssetsURL as p, hasProtocol as q, isScriptProtocol as r, joinURL as s, createDefu as t, useRuntimeConfig as u, sanitizeStatusCode as v, withQuery as w, baseURL as x, createHooks as y, hash$1 as z };
+export { $fetch$1 as $, defu as A, hasProtocol as B, isScriptProtocol as C, joinURL as D, withQuery as E, createDefu as F, sanitizeStatusCode as G, baseURL as H, createHooks as I, hash$1 as J, serialize$1 as K, isEqual as L, parseQuery as M, withTrailingSlash as N, withoutTrailingSlash as O, nodeServer as P, dismissAlert as a, resolveConflict as b, adjustBoundary as c, defineEventHandler as d, confirmIsolation as e, createPermit as f, getState as g, advancePermit as h, reReviewPermit as i, buildAssetsURL as j, encodePath as k, defineRenderHandler as l, getQuery as m, createError$1 as n, getRouteRules as o, publicAssetsURL as p, getResponseStatusText as q, readBody as r, getResponseStatus as s, toggleStep as t, useRuntimeConfig as u, useNitroApp as v, defuFn as w, klona as x, parseURL as y, decodePath as z };
 //# sourceMappingURL=nitro.mjs.map

@@ -2,6 +2,7 @@
 import { useOperationsStore } from '~/stores/operations'
 
 const store = useOperationsStore()
+await store.bootstrap()
 const route = useRoute()
 const open = ref(false)
 const nav = [
@@ -10,6 +11,9 @@ const nav = [
   { to: '/devices', label: '隔离与锁定', icon: 'i-heroicons-lock-closed' },
   { to: '/audit', label: '审计记录', icon: 'i-heroicons-clock' },
 ]
+const noticeColor = computed(() => ({
+  success: 'green', warning: 'amber', error: 'red', info: 'blue',
+}[store.notice?.type ?? 'info'] as 'green' | 'amber' | 'red' | 'blue'))
 </script>
 
 <template>
@@ -27,15 +31,22 @@ const nav = [
         <div><b>运行中 · A 区集电线路检修</b><span class="muted desktop-only">值班负责人：李骁 · 2026-09-29 16:48</span></div>
         <span class="flex-1" />
         <UBadge :color="store.connection === '在线' ? 'green' : 'amber'" variant="subtle">{{ store.connection }}</UBadge>
-        <UButton v-if="store.pendingRetry" size="sm" color="amber" variant="soft" @click="store.retryPending">重试 {{ store.pendingRetry }} 项</UButton>
+        <UButton v-if="store.connection === '在线'" size="sm" color="gray" variant="ghost" icon="i-heroicons-signal-slash" @click="store.markOffline">模拟断线</UButton>
+        <UButton v-else-if="!store.pendingRetry" size="sm" color="green" variant="soft" icon="i-heroicons-signal" @click="store.markOnline">恢复在线</UButton>
+        <UButton v-if="store.pendingRetry" size="sm" color="amber" variant="soft" icon="i-heroicons-arrow-path" @click="store.retryPending">补传 {{ store.pendingRetry }} 项</UButton>
         <UButton icon="i-heroicons-plus" color="primary" @click="navigateTo('/permits?new=1')">新建许可</UButton>
       </header>
+      <UAlert
+        v-if="store.notice" class="notice-bar" :color="noticeColor" variant="soft"
+        :icon="store.notice.type === 'error' ? 'i-heroicons-x-circle' : store.notice.type === 'success' ? 'i-heroicons-check-circle' : 'i-heroicons-information-circle'"
+        :title="store.notice.text" :actions="[{ label: '知道了', click: store.dismissNotice }]"
+      />
       <main class="main"><slot /></main>
     </div>
   </div>
 </template>
 
 <style scoped>
-.app-shell{min-height:100vh;display:flex}.sidebar{width:236px;background:#0f172a;color:#e2e8f0;padding:18px 12px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}.brand{display:flex;gap:11px;align-items:center;padding:4px 8px 22px;border-bottom:1px solid #233047}.brand>span{display:grid;place-items:center;width:38px;height:38px;border-radius:8px;background:#0891b2;font-weight:800}.brand b,.brand small{display:block}.brand small{font-size:9px;color:#7f8c9f;letter-spacing:1px}.sidebar nav{display:grid;gap:5px;padding:16px 0;flex:1}.sidebar a{display:flex;gap:10px;align-items:center;padding:11px 12px;border-radius:7px;color:#aebbd0;text-decoration:none;font-size:14px}.sidebar a:hover,.sidebar a.active{background:#1e293b;color:#fff}.sidebar a.active{box-shadow:inset 3px 0 #22d3ee}.site-card{display:flex;align-items:center;gap:10px;background:#151f31;border:1px solid #263247;border-radius:8px;padding:12px}.site-card b,.site-card small{display:block;font-size:13px}.site-card small{color:#8290a7;margin-top:4px}.pulse{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px #165e35}.content{min-width:0;flex:1}.topbar{height:68px;background:#fff;border-bottom:1px solid #dfe5ec;display:flex;align-items:center;gap:12px;padding:0 22px;position:sticky;top:0;z-index:20}.topbar span{font-size:12px}.main{padding:22px}.mobile-menu{display:none}
+.app-shell{min-height:100vh;display:flex}.sidebar{width:236px;background:#0f172a;color:#e2e8f0;padding:18px 12px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}.brand{display:flex;gap:11px;align-items:center;padding:4px 8px 22px;border-bottom:1px solid #233047}.brand>span{display:grid;place-items:center;width:38px;height:38px;border-radius:8px;background:#0891b2;font-weight:800}.brand b,.brand small{display:block}.brand small{font-size:9px;color:#7f8c9f;letter-spacing:1px}.sidebar nav{display:grid;gap:5px;padding:16px 0;flex:1}.sidebar a{display:flex;gap:10px;align-items:center;padding:11px 12px;border-radius:7px;color:#aebbd0;text-decoration:none;font-size:14px}.sidebar a:hover,.sidebar a.active{background:#1e293b;color:#fff}.sidebar a.active{box-shadow:inset 3px 0 #22d3ee}.site-card{display:flex;align-items:center;gap:10px;background:#151f31;border:1px solid #263247;border-radius:8px;padding:12px}.site-card b,.site-card small{display:block;font-size:13px}.site-card small{color:#8290a7;margin-top:4px}.pulse{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px #165e35}.content{min-width:0;flex:1}.topbar{height:68px;background:#fff;border-bottom:1px solid #dfe5ec;display:flex;align-items:center;gap:12px;padding:0 22px;position:sticky;top:0;z-index:20}.topbar span{font-size:12px}.main{padding:22px}.mobile-menu{display:none}.notice-bar{margin:14px 22px 0}
 @media(max-width:900px){.sidebar{position:fixed;left:-250px;z-index:50;transition:.2s}.sidebar.open{left:0}.content{width:100%}.mobile-menu{display:inline-flex}.main{padding:14px}.topbar{padding:0 12px}}
 </style>
